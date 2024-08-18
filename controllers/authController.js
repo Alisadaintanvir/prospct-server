@@ -26,7 +26,9 @@ const authController = {
   login: async (req, res) => {
     try {
       const { email, password } = req.body;
+
       const existingUser = await User.findOne({ email });
+
       if (!existingUser) {
         return res.status(401).json({ message: "Invalid email or password" });
       }
@@ -42,9 +44,6 @@ const authController = {
           expiresIn: "1h",
         }
       );
-
-      // Update the user's token field
-      await User.updateOne({ _id: existingUser._id }, { token });
 
       res.status(200).json({
         message: "Login successful",
@@ -72,6 +71,20 @@ const authController = {
     } catch (error) {
       console.log(error);
       res.status(401).json({ message: "Invalid or expired token" });
+    }
+  },
+
+  logout: async (req, res) => {
+    try {
+      const token = req.headers["authorization"]?.split(" ")[1];
+      if (!token) return res.status(401).json({ message: "No token provided" });
+      // Decode the token to get user id
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      await User.updateOne({ _id: decoded.userId }, { token: null });
+      res.status(200).json({ message: "Logout successful" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Something went wrong" });
     }
   },
 };
