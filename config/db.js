@@ -1,16 +1,27 @@
-// config/db.js
-const mongoose = require("mongoose");
 require("dotenv").config();
 
+const { MongoClient } = require("mongodb");
+
+// Replace 'your_connection_string' with your actual MongoDB connection string
+const mongoURI =
+  process.env.MONGODB_URI || "mongodb://localhost:27017/Large_Data";
+
+// Create a new MongoClient
+const client = new MongoClient(mongoURI);
+
+// Connect to the database
 const connectDB = async () => {
   try {
-    const mongoURL = process.env.MONGODB_URL;
-    await mongoose.connect(mongoURL);
-    console.log("MongoDB connected");
-  } catch (err) {
-    console.error(err.message);
-    process.exit(1);
+    await client.connect();
+    console.log("MongoDB connected successfully");
+  } catch (error) {
+    console.error("Error connecting to MongoDB:", error.message);
+    process.exit(1); // Exit process with failure
   }
 };
 
-module.exports = connectDB;
+// Export the client and connect function
+module.exports = {
+  connectDB,
+  client,
+};
