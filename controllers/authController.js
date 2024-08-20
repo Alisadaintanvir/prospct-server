@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { client } = require("../config/db");
+const { ObjectId } = require("mongodb");
 
 const db = client.db();
 const usersCollection = db.collection("users");
@@ -57,7 +58,7 @@ const authController = {
         { expiresIn: "1h" }
       );
 
-      // Update user with the new token
+      // Update user token
       await usersCollection.updateOne(
         { _id: existingUser._id },
         { $set: { token } }
@@ -86,17 +87,17 @@ const authController = {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
       const user = await usersCollection.findOne(
-        { _id: decoded.userId },
+        { _id: ObjectId.createFromHexString(decoded.userId) },
         { projection: { password: 0 } }
       );
-      console.log(user);
 
-      // if (!user) return res.status(401).json({ message: "User not found" });
+      if (!user) return res.status(401).json({ message: "User not found" });
 
-      // if (user.token !== token) {
-      //   return res.status(401).json({ message: "Token mismatch" });
-      // }
+      if (user.token !== token) {
+        return res.status(401).json({ message: "Token mismatch" });
+      }
 
       res.status(200).json({ user });
     } catch (error) {
@@ -111,7 +112,10 @@ const authController = {
       if (!token) return res.status(401).json({ message: "No token provided" });
       // Decode the token to get user id
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      await usersCollection.updateOne({ _id: decoded.userId }, { token: null });
+      await usersCollection.updateOne(
+        { _id: ObjectId.createFromHexString(decoded.userId) },
+        { $set: { token: null } }
+      );
       res.status(200).json({ message: "Logout successful" });
     } catch (error) {
       console.log(error);
