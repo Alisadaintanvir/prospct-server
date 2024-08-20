@@ -1,8 +1,6 @@
-// middlewares/authMiddleware.js
 const jwt = require("jsonwebtoken");
-const User = require("../models/User"); // Adjust the path as necessary
 
-const authMiddleware = async (req, res, next) => {
+const authMiddleware = (req, res, next) => {
   const authHeader = req.headers["authorization"];
 
   if (!authHeader) {
@@ -13,19 +11,17 @@ const authMiddleware = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
 
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
-    }
+    // Attach decoded user info to the request object
+    req.user = {
+      id: decoded.userId,
+      role: decoded.role, // Add other necessary fields
+    };
 
-    if (token !== user.token) {
-      return res.status(403).json({ message: "Invalid token" });
-    }
-
-    req.user = user; // Attach user to the request object for use in route handlers
-    next(); // Proceed to the next middleware or route handler
+    // Proceed to the next middleware or route handler
+    next();
   } catch (error) {
+    console.error(error);
     res.status(401).json({ message: "Invalid or expired token" });
   }
 };
