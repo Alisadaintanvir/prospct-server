@@ -11,7 +11,14 @@ const PORT = process.env.PORT || 5000;
 connectDB();
 
 app.use(express.json());
-app.use(cors());
+
+const corsOptions = {
+  origin: "https://app.prospct.io", // Replace with your frontend domain
+  methods: "GET,POST,PUT,DELETE", // Add allowed methods
+  allowedHeaders: "Content-Type,Authorization", // Add allowed headers
+};
+
+app.use(cors(corsOptions));
 
 app.use("/api", authRoutes);
 app.use("/api", searchRoutes);
