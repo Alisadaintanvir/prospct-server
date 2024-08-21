@@ -47,32 +47,44 @@ const searchController = {
 
       // Seniority Filter
       if (filters.seniority && filters.seniority.length > 0) {
+        const lowercasedSeniorities = filters.seniority.map((seniority) =>
+          seniority.toLowerCase()
+        );
         conditions.push({
-          "_source.person_seniority": { $in: filters.seniority },
+          "_source.person_seniority": { $in: lowercasedSeniorities },
         });
       }
 
       // Exclusion Seniority Filters
       if (excludedFilters.seniority && excludedFilters.seniority.length > 0) {
+        const lowercasedSeniorities = filters.seniority.map((seniority) =>
+          seniority.toLowerCase()
+        );
         exclusionConditions.push({
           "_source.person_seniority": {
-            $nin: excludedFilters.seniority,
+            $nin: lowercasedSeniorities,
           },
         });
       }
 
       // Industry Filter
       if (filters.industry && filters.industry.length > 0) {
+        const lowercasedIndustries = filters.industry.map((industry) =>
+          industry.toLowerCase()
+        );
         conditions.push({
-          "_source.organization_industries": { $in: filters.industry },
+          "_source.organization_industries": { $in: lowercasedIndustries },
         });
       }
 
       // Exclusion Industry Filters
       if (excludedFilters.industry && excludedFilters.industry.length > 0) {
+        const lowercasedIndustries = filters.industry.map((industry) =>
+          industry.toLowerCase()
+        );
         exclusionConditions.push({
           "_source.organization_industries": {
-            $nin: excludedFilters.industry,
+            $nin: lowercasedIndustries,
           },
         });
       }
