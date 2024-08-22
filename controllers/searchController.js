@@ -252,10 +252,22 @@ const searchController = {
 
       // Email Type Filter
       if (filters.emailType && filters.emailType.length > 0) {
-        const emailDomainRegex = new RegExp(`@${filters.emailDomain}$`, "i");
-        conditions.push({
-          "_source.person_email": { $regex: emailDomainRegex },
-        });
+        const regexConditions = filters.emailType.map((ext) => ({
+          "_source.person_email": { $regex: `${ext}$`, $options: "i" },
+        }));
+
+        // Use $or to match any of the provided email extensions
+        conditions.push({ $or: regexConditions });
+      }
+
+      // Email Type Exclusion Filter
+      if (excludedFilters.emailType && excludedFilters.emailType.length > 0) {
+        const emailTypeExclusions = excludedFilters.emailType.map((ext) => ({
+          "_source.person_email": { $not: new RegExp(`${ext}$`, "i") },
+        }));
+
+        // Use $and with exclusion conditions to ensure all are excluded
+        exclusionConditions.push({ $and: emailTypeExclusions });
       }
 
       // Apply all conditions
