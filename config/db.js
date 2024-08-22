@@ -3,8 +3,11 @@ require("dotenv").config();
 const { MongoClient } = require("mongodb");
 
 // Replace 'your_connection_string' with your actual MongoDB connection string
-const mongoURI =
-  process.env.MONGODB_URI || "mongodb://localhost:27017/Large_Data";
+const mongoURI = process.env.MONGODB_URL;
+
+if (!mongoURI) {
+  throw new Error("MongoDB connection string not found");
+}
 
 // Create a new MongoClient
 const client = new MongoClient(mongoURI);

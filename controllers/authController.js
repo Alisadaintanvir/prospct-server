@@ -116,6 +116,7 @@ const authController = {
         { _id: ObjectId.createFromHexString(decoded.userId) },
         { $set: { token: null } }
       );
+
       res.status(200).json({ message: "Logout successful" });
     } catch (error) {
       console.log(error);
