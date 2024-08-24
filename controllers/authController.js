@@ -55,7 +55,7 @@ const authController = {
       const token = jwt.sign(
         { userId: existingUser._id, role: existingUser.role },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "3h" }
       );
 
       // Update user token

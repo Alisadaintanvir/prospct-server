@@ -3,6 +3,7 @@ const cors = require("cors");
 const { connectDB } = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const searchRoutes = require("./routes/searchRoutes");
+const savedRoutes = require("./routes/savedRoutes");
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use(cors(corsOptions));
 
 app.use("/api", authRoutes);
 app.use("/api", searchRoutes);
+app.use("/api", savedRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server is working fine.");
