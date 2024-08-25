@@ -4,6 +4,7 @@ const { ObjectId } = require("mongodb");
 
 const db = client.db();
 const collection = db.collection("saved_items");
+const contactCollection = db.collection("contacts_v5");
 
 const savedController = {
   // Save or update items for a user
@@ -41,8 +42,6 @@ const savedController = {
         });
       }
 
-      console.log("item saved");
-
       res.status(200).json({ message: "Item saved successfully" });
     } catch (error) {
       console.log("Error saving data:", error);
@@ -59,32 +58,30 @@ const savedController = {
         return res.status(400).json({ error: "User ID is required" });
       }
 
-      const data = await collection
-        .aggregate([
-          {
-            $match: { userId: userId }, // Match the user based on userId
-          },
-          {
-            $project: { items: 1 }, // Project only the items field
-          },
-          {
-            $lookup: {
-              from: "contacts_v5", // The collection to join with
-              localField: "items", // Field from the saved_items collection
-              foreignField: "_id", // Field from the contacts_v5 collection
-              as: "itemDetails", // Output array field
-            },
-          },
-          {
-            $unwind: "$itemDetails", // Unwind the itemDetails array
-          },
-          {
-            $replaceRoot: { newRoot: "$itemDetails" }, // Replace root with itemDetails
-          },
-        ])
+      // Fetch the saved items document for the user
+      const userDocument = await collection.findOne({ userId });
+
+      if (!userDocument) {
+        return res
+          .status(404)
+          .json({ error: "No saved items found for this user" });
+      }
+
+      // Extract the items array and calculate the count
+      const itemsArray = userDocument.items || [];
+      const totalSavedItems = itemsArray.length;
+
+      // Fetch detailed information for the items
+      const itemDetails = await contactCollection
+        .find({
+          _id: { $in: itemsArray.map((id) => id) },
+        })
         .toArray();
 
-      res.status(200).json({ data });
+      res.status(200).json({
+        data: itemDetails,
+        totalSavedItems,
+      });
     } catch (error) {
       console.log("Error getting data:", error);
       res.status(500).json({ error: "Failed to get saved items" });

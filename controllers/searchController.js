@@ -4,16 +4,22 @@ const parseNumber = require("../utils/parseNumber");
 const searchController = {
   search: async (req, res) => {
     try {
+      const userId = req.user.userId;
       const db = client.db();
-      const collection = db.collection("contacts_v5");
+      const contactsCollection = db.collection("contacts_v5");
+      const savedItemCollection = db.collection("saved_items");
 
       const { filters, excludedFilters } = req.body;
+
       const query = {};
       const limit = filters.limit || 5;
       const page = filters.currentPage || 1;
+      const viewType = filters.viewType || "total";
 
       const conditions = [];
       const exclusionConditions = [];
+
+      const addCondition = (field, operator, values) => {};
 
       // Country Filter
       if (filters.countries && filters.countries.length > 0) {
@@ -279,7 +285,24 @@ const searchController = {
         query.$and = [...(query.$and || []), ...exclusionConditions];
       }
 
-      const contacts = await collection
+      if (viewType === "saved") {
+        const savedItemsDoc = await savedItemCollection
+          .find({ userId })
+          .toArray();
+
+        if (savedItemsDoc?.[0]?.items?.length === 0) {
+          return res.status(200).json([]);
+        }
+
+        const savedItemsIds = savedItemsDoc[0].items;
+
+        const contacts = await contactsCollection
+          .find({ _id: { $in: savedItemsIds }, ...query })
+          .toArray();
+        return res.status(200).json(contacts);
+      }
+
+      const contacts = await contactsCollection
         .find(query)
         .skip((page - 1) * limit)
         .limit(limit)
