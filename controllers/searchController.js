@@ -9,255 +9,215 @@ const searchController = {
       const contactsCollection = db.collection("contacts_v5");
       const savedItemCollection = db.collection("saved_items");
 
-      const { filters, excludedFilters } = req.body;
+      const { filters = {}, excludedFilters = {} } = req.body;
 
       const query = {};
-      const limit = filters.limit || 5;
+      const limit = filters.limit || 25;
       const page = filters.currentPage || 1;
       const viewType = filters.viewType || "total";
 
       const conditions = [];
       const exclusionConditions = [];
 
-      const addCondition = (field, operator, values) => {};
+      const addCondition = (field, operator, values) => {
+        if (values && values.length > 0) {
+          conditions.push({ [field]: { [operator]: values } });
+        }
+      };
 
-      // Country Filter
-      if (filters.countries && filters.countries.length > 0) {
-        conditions.push({
-          "_source.person_location_country": { $in: filters.countries },
-        });
-      }
+      const addExclusionCondition = (field, operator, values) => {
+        if (values && values.length > 0) {
+          exclusionConditions.push({ [field]: { [operator]: values } });
+        }
+      };
 
-      // Exclusion Country Filters
-      if (excludedFilters.countries && excludedFilters.countries.length > 0) {
-        exclusionConditions.push({
-          "_source.person_location_country": {
-            $nin: excludedFilters.countries,
-          },
-        });
-      }
-
-      // Job Title Filter
-      if (filters.jobTitle && filters.jobTitle.length > 0) {
-        conditions.push({ "_source.person_title": { $in: filters.jobTitle } });
-      }
-
-      // Exclusion Job Filters
-      if (excludedFilters.jobTitle && excludedFilters.jobTitle.length > 0) {
-        exclusionConditions.push({
-          "_source.person_title": {
-            $nin: excludedFilters.jobTitle,
-          },
-        });
-      }
-
-      // Seniority Filter
-      if (filters.seniority && filters.seniority.length > 0) {
-        const lowercasedSeniorities = filters.seniority.map((seniority) =>
-          seniority.toLowerCase()
+      // Apply filters
+      // location country
+      if (Array.isArray(filters.countries)) {
+        addCondition(
+          "_source.person_location_country",
+          "$in",
+          filters.countries
         );
-        conditions.push({
-          "_source.person_seniority": { $in: lowercasedSeniorities },
-        });
       }
 
-      // Exclusion Seniority Filters
-      if (excludedFilters.seniority && excludedFilters.seniority.length > 0) {
-        const lowercasedSeniorities = filters.seniority.map((seniority) =>
-          seniority.toLowerCase()
+      if (Array.isArray(excludedFilters.countries)) {
+        addExclusionCondition(
+          "_source.person_location_country",
+          "$nin",
+          excludedFilters.countries
         );
-        exclusionConditions.push({
-          "_source.person_seniority": {
-            $nin: lowercasedSeniorities,
-          },
-        });
       }
 
-      // Industry Filter
-      if (filters.industry && filters.industry.length > 0) {
-        const lowercasedIndustries = filters.industry.map((industry) =>
-          industry.toLowerCase()
+      // job title
+      if (Array.isArray(filters.jobTitle)) {
+        addCondition("_source.person_title", "$in", filters.jobTitle);
+      }
+
+      if (Array.isArray(excludedFilters.jobTitle)) {
+        addExclusionCondition(
+          "_source.person_title",
+          "$nin",
+          excludedFilters.jobTitle
         );
-        conditions.push({
-          "_source.organization_industries": { $in: lowercasedIndustries },
-        });
       }
 
-      // Exclusion Industry Filters
-      if (excludedFilters.industry && excludedFilters.industry.length > 0) {
-        const lowercasedIndustries = filters.industry.map((industry) =>
-          industry.toLowerCase()
+      // seniority
+      if (Array.isArray(filters.seniority)) {
+        addCondition(
+          "_source.person_seniority",
+          "$in",
+          filters.seniority.map((s) => s.toLowerCase())
         );
-        exclusionConditions.push({
-          "_source.organization_industries": {
-            $nin: lowercasedIndustries,
-          },
-        });
       }
 
-      // Email Status Filter
-      if (filters.emailStatus && filters.emailStatus.length > 0) {
-        conditions.push({
-          "_source.person_email_status_cd": { $in: filters.emailStatus },
-        });
+      if (Array.isArray(excludedFilters.seniority)) {
+        addExclusionCondition(
+          "_source.person_seniority",
+          "$nin",
+          excludedFilters.seniority.map((s) => s.toLowerCase())
+        );
       }
 
-      // Exclusion Email Status Filters
-      if (
-        excludedFilters.emailStatus &&
-        excludedFilters.emailStatus.length > 0
-      ) {
-        exclusionConditions.push({
-          "_source.person_email_status_cd": {
-            $nin: excludedFilters.emailStatus,
-          },
-        });
+      // industry
+      if (Array.isArray(filters.industry)) {
+        addCondition(
+          "_source.organization_industries",
+          "$in",
+          filters.industry.map((i) => i.toLowerCase())
+        );
       }
 
-      // Person Name Filter
-      if (filters.personName && filters.personName.length > 0) {
-        conditions.push({ "_source.person_name": { $in: filters.personName } });
+      if (Array.isArray(excludedFilters.industry)) {
+        addExclusionCondition(
+          "_source.organization_industries",
+          "$nin",
+          excludedFilters.industry.map((i) => i.toLowerCase())
+        );
       }
 
-      // Exclusion Person Name Filters
-      if (excludedFilters.personName && excludedFilters.personName.length > 0) {
-        exclusionConditions.push({
-          "_source.person_name": {
-            $nin: excludedFilters.personName,
-          },
-        });
+      // email status
+      if (Array.isArray(filters.emailStatus)) {
+        addCondition(
+          "_source.person_email_status_cd",
+          "$in",
+          filters.emailStatus
+        );
       }
 
-      // Employee Range Filter
-      if (filters.employeeRange && filters.employeeRange.length > 0) {
-        const employeeRanges = filters.employeeRange
+      if (Array.isArray(excludedFilters.emailStatus)) {
+        addExclusionCondition(
+          "_source.person_email_status_cd",
+          "$nin",
+          excludedFilters.emailStatus
+        );
+      }
+
+      // person name
+      if (Array.isArray(filters.personName)) {
+        addCondition("_source.person_name", "$in", filters.personName);
+      }
+
+      if (Array.isArray(excludedFilters.personName)) {
+        addExclusionCondition(
+          "_source.person_name",
+          "$nin",
+          excludedFilters.personName
+        );
+      }
+
+      // Handle ranges for employees and revenue
+      const handleRange = (field, ranges) => {
+        return ranges
           .map((range) => {
-            const normalizedRange = range.replace(/and/g, "-");
-            const [min, max] = normalizedRange.split("-").map(Number);
+            const [minStr, maxStr] = range
+              .replace(/and/g, "-")
+              .split("-")
+              .map((s) => s.trim());
+            const min = parseNumber(minStr);
+            const max = parseNumber(maxStr);
+            if (isNaN(min)) return null;
+            return isNaN(max)
+              ? { [field]: { $gte: min } }
+              : { [field]: { $gte: min, $lte: max } };
+          })
+          .filter(Boolean);
+      };
+
+      const handleExclusionRange = (field, ranges) => {
+        return ranges
+          .map((range) => {
+            const [minStr, maxStr] = range
+              .replace(/and/g, "-")
+              .split("-")
+              .map((s) => s.trim());
+            const min = parseNumber(minStr);
+            const max = parseNumber(maxStr);
+
             if (isNaN(min)) return null;
             if (isNaN(max)) {
               return {
-                "_source.organization_num_current_employees": { $gte: min },
+                $or: [{ [field]: { $lt: min } }, { [field]: { $gt: min } }],
               };
             }
             return {
-              "_source.organization_num_current_employees": {
-                $gte: min,
-                $lte: max,
-              },
+              $or: [{ [field]: { $lt: min } }, { [field]: { $gt: max } }],
             };
           })
           .filter(Boolean);
-        if (employeeRanges.length > 0) {
-          conditions.push({ $or: employeeRanges });
-        }
+      };
+
+      if (
+        Array.isArray(filters.employeeRange) &&
+        filters.employeeRange.length > 0
+      ) {
+        conditions.push({
+          $or: handleRange(
+            "_source.organization_num_current_employees",
+            filters.employeeRange
+          ),
+        });
       }
 
-      // Employee Range Exclusion Filter
       if (
-        excludedFilters.employeeRange &&
+        Array.isArray(excludedFilters.employeeRange) &&
         excludedFilters.employeeRange.length > 0
       ) {
-        const excludedEmployeeRanges = excludedFilters.employeeRange
-          .map((range) => {
-            const normalizedRange = range.replace(/and/g, "-");
-            const [minStr, maxStr] = normalizedRange
-              .split("-")
-              .map((str) => str.trim());
-
-            const min = parseNumber(minStr);
-            const max = parseNumber(maxStr);
-            if (isNaN(min)) return null;
-            if (isNaN(max)) {
-              return {
-                $or: [
-                  {
-                    "_source.organization_num_current_employees": { $lt: min },
-                  },
-                  {
-                    "_source.organization_num_current_employees": { $gt: min },
-                  },
-                ],
-              };
-            }
-            return {
-              $or: [
-                { "_source.organization_num_current_employees": { $lt: min } },
-                { "_source.organization_num_current_employees": { $gt: max } },
-              ],
-            };
-          })
-          .filter(Boolean);
-
-        if (excludedEmployeeRanges.length > 0) {
-          exclusionConditions.push({ $or: excludedEmployeeRanges });
-        }
+        exclusionConditions.push({
+          $or: handleExclusionRange(
+            "_source.organization_num_current_employees",
+            excludedFilters.employeeRange
+          ),
+        });
       }
 
-      // Revenue Range Filter
-      if (filters.revenueRange && filters.revenueRange.length > 0) {
-        const revenueRanges = filters.revenueRange
-          .map((range) => {
-            const normalizedRange = range.replace(/and/g, "-");
-            const [minStr, maxStr] = normalizedRange
-              .split("-")
-              .map((str) => str.trim());
-
-            // Remove 'M' and convert to a number in thousands
-
-            const min = parseNumber(minStr);
-            const max = parseNumber(maxStr);
-            if (isNaN(min)) return null;
-            if (isNaN(max)) {
-              return {
-                "_source.organization_revenue_in_thousands_int": { $gte: min },
-              };
-            }
-            return {
-              "_source.organization_revenue_in_thousands_int": {
-                $gte: min,
-                $lte: max,
-              },
-            };
-          })
-          .filter(Boolean);
-        if (revenueRanges.length > 0) {
-          conditions.push({ $or: revenueRanges });
-        }
+      // Applying revenue range filters similarly
+      if (
+        Array.isArray(filters.revenueRange) &&
+        filters.revenueRange.length > 0
+      ) {
+        conditions.push({
+          $or: handleRange(
+            "_source.organization_revenue_in_thousands_int",
+            filters.revenueRange
+          ),
+        });
       }
 
-      // Revenue Range Filter and Exclusion (same as before)
-      if (filters.revenueRange && filters.revenueRange.length > 0) {
-        const revenueRanges = filters.revenueRange
-          .map((range) => {
-            const normalizedRange = range.replace(/and/g, "-");
-            const [minStr, maxStr] = normalizedRange
-              .split("-")
-              .map((str) => str.trim());
-
-            const min = parseNumber(minStr);
-            const max = parseNumber(maxStr);
-            if (isNaN(min)) return null;
-            if (isNaN(max)) {
-              return {
-                "_source.organization_revenue_in_thousands_int": { $gte: min },
-              };
-            }
-            return {
-              "_source.organization_revenue_in_thousands_int": {
-                $gte: min,
-                $lte: max,
-              },
-            };
-          })
-          .filter(Boolean);
-        if (revenueRanges.length > 0) {
-          conditions.push({ $or: revenueRanges });
-        }
+      if (
+        Array.isArray(excludedFilters.revenueRange) &&
+        excludedFilters.revenueRange.length > 0
+      ) {
+        exclusionConditions.push({
+          $or: handleExclusionRange(
+            "_source.organization_revenue_in_thousands_int",
+            excludedFilters.revenueRange
+          ),
+        });
       }
 
       // Email Type Filter
-      if (filters.emailType && filters.emailType.length > 0) {
+      if (Array.isArray(filters.emailType) && filters.emailType.length > 0) {
         const regexConditions = filters.emailType.map((ext) => ({
           "_source.person_email": { $regex: `${ext}$`, $options: "i" },
         }));
@@ -267,7 +227,10 @@ const searchController = {
       }
 
       // Email Type Exclusion Filter
-      if (excludedFilters.emailType && excludedFilters.emailType.length > 0) {
+      if (
+        Array.isArray(excludedFilters.emailType) &&
+        excludedFilters.emailType.length > 0
+      ) {
         const emailTypeExclusions = excludedFilters.emailType.map((ext) => ({
           "_source.person_email": { $not: new RegExp(`${ext}$`, "i") },
         }));
@@ -290,14 +253,17 @@ const searchController = {
           .find({ userId })
           .toArray();
 
-        if (savedItemsDoc?.[0]?.items?.length === 0) {
+        const savedItemsIds =
+          (savedItemsDoc.length > 0 && savedItemsDoc[0].items) || [];
+
+        if (savedItemsIds.length === 0) {
           return res.status(200).json([]);
         }
 
-        const savedItemsIds = savedItemsDoc[0].items;
-
         const contacts = await contactsCollection
           .find({ _id: { $in: savedItemsIds }, ...query })
+          .skip((page - 1) * limit)
+          .limit(limit)
           .toArray();
         return res.status(200).json(contacts);
       }
