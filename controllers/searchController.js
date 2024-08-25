@@ -16,6 +16,8 @@ const searchController = {
       const page = filters.currentPage || 1;
       const viewType = filters.viewType || "total";
 
+      let results = [];
+      const counts = { total: "63M", new: 0, saved: 0 };
       const conditions = [];
       const exclusionConditions = [];
 
@@ -248,33 +250,38 @@ const searchController = {
         query.$and = [...(query.$and || []), ...exclusionConditions];
       }
 
+      // Calculate saved items count
+      const savedItemsDoc = await savedItemCollection.findOne({ userId });
+      const savedItemsIds = savedItemsDoc?.items || [];
+      counts.saved = savedItemsIds.length;
+
       if (viewType === "saved") {
-        const savedItemsDoc = await savedItemCollection
-          .find({ userId })
-          .toArray();
-
-        const savedItemsIds =
-          (savedItemsDoc.length > 0 && savedItemsDoc[0].items) || [];
-
         if (savedItemsIds.length === 0) {
           return res.status(200).json([]);
         }
 
-        const contacts = await contactsCollection
+        results = await contactsCollection
           .find({ _id: { $in: savedItemsIds }, ...query })
           .skip((page - 1) * limit)
           .limit(limit)
           .toArray();
-        return res.status(200).json(contacts);
+      } else if (viewType === "total") {
+        // Exclude saved items from the total list
+        if (savedItemsIds.length > 0) {
+          query._id = { $nin: savedItemsIds };
+        }
+
+        results = await contactsCollection
+          .find(query)
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .toArray();
       }
 
-      const contacts = await contactsCollection
-        .find(query)
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .toArray();
-
-      res.status(200).json(contacts);
+      res.status(200).json({
+        results,
+        counts,
+      });
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: "Something went wrong" });
