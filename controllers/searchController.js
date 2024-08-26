@@ -1,5 +1,6 @@
 const { client } = require("../config/db");
 const parseNumber = require("../utils/parseNumber");
+// const redis = require("../redisClient");
 
 const searchController = {
   search: async (req, res) => {
@@ -254,6 +255,11 @@ const searchController = {
       const savedItemsDoc = await savedItemCollection.findOne({ userId });
       const savedItemsIds = savedItemsDoc?.items || [];
       counts.saved = savedItemsIds.length;
+
+      // Count the total number of matching documents
+      counts.total = await contactsCollection.countDocuments(query, {
+        hint: "_id_",
+      });
 
       if (viewType === "saved") {
         if (savedItemsIds.length === 0) {
