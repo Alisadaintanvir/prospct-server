@@ -17,7 +17,14 @@ const authController = {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const newUser = { username, email, password: hashedPassword };
+      const newUser = {
+        username,
+        email,
+        password: hashedPassword,
+        emailCredits: 100,
+        phoneCredits: 30,
+        exportCredits: 30,
+      };
       await usersCollection.insertOne(newUser);
 
       res.status(201).json({ message: "User registered successfully" });

@@ -257,9 +257,7 @@ const searchController = {
       counts.saved = savedItemsIds.length;
 
       // Count the total number of matching documents
-      counts.total = await contactsCollection.countDocuments(query, {
-        hint: "_id_",
-      });
+      counts.total = await contactsCollection.count(query);
 
       if (viewType === "saved") {
         if (savedItemsIds.length === 0) {
