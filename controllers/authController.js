@@ -21,9 +21,11 @@ const authController = {
         username,
         email,
         password: hashedPassword,
-        emailCredits: 100,
-        phoneCredits: 30,
-        exportCredits: 30,
+        credits: {
+          emailCredits: 100,
+          phoneCredits: 30,
+          exportCredits: 30,
+        },
       };
       await usersCollection.insertOne(newUser);
 
