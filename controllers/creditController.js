@@ -17,7 +17,7 @@ const creditsController = {
           .json({ message: "User ID and type are required" });
       }
 
-      const updateFields = [];
+      const updateFields = {};
 
       if (type === "email") {
         updateFields["credits.emailCredits"] = -1;
@@ -27,10 +27,13 @@ const creditsController = {
         return res.status(400).json({ error: "Invalid type" });
       }
 
+      const objectId = new ObjectId(userId);
+
       const user = await userCollection.findOne({
-        _id: userId,
+        _id: objectId,
       });
       console.log(user);
+
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -40,7 +43,10 @@ const creditsController = {
         return res.status(400).json({ error: "Insufficient credits" });
       }
 
-      await userCollection.updateOne({ userId }, { $inc: updateFields });
+      await userCollection.updateOne(
+        { _id: new ObjectId(userId) },
+        { $inc: updateFields }
+      );
 
       res.status(200).json({ message: "Credits deducted successfully" });
     } catch (error) {
