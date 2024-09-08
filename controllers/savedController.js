@@ -1,6 +1,5 @@
 // controllers/savedController.js
 const { client } = require("../config/db");
-const { ObjectId } = require("mongodb");
 
 const db = client.db();
 const collection = db.collection("saved_items");

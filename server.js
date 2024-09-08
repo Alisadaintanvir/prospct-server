@@ -35,7 +35,7 @@ app.use(cors(corsOptions));
 app.use("/api", authRoutes);
 app.use("/api", searchRoutes);
 app.use("/api", savedRoutes);
-app.use("/api", creditRoutes);
+app.use("/api/credits", creditRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server is working fine.");
