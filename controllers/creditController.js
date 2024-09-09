@@ -7,7 +7,6 @@ const userCollection = db.collection("users");
 const creditsController = {
   deductCredits: async (req, res) => {
     const userId = req.user.userId;
-    console.log(userId);
 
     try {
       const { type } = req.body;
@@ -27,12 +26,11 @@ const creditsController = {
         return res.status(400).json({ error: "Invalid type" });
       }
 
-      const objectId = new ObjectId(userId);
+      const objectId = ObjectId.createFromHexString(userId);
 
       const user = await userCollection.findOne({
         _id: objectId,
       });
-      console.log(user);
 
       if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -44,7 +42,7 @@ const creditsController = {
       }
 
       await userCollection.updateOne(
-        { _id: new ObjectId(userId) },
+        { _id: ObjectId.createFromHexString(userId) },
         { $inc: updateFields }
       );
 

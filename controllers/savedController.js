@@ -21,7 +21,6 @@ const savedController = {
 
       // Find the existing entry for the user
       const existingEntry = await collection.findOne({ userId });
-      console.log(existingEntry);
 
       if (existingEntry) {
         // Update existing entry
