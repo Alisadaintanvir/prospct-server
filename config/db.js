@@ -1,30 +1,33 @@
 require("dotenv").config();
+const mongoose = require("mongoose");
 
-const { MongoClient } = require("mongodb");
-
-// Replace 'your_connection_string' with your actual MongoDB connection string
-const mongoURI = process.env.MONGODB_URL;
-
-if (!mongoURI) {
-  throw new Error("MongoDB connection string not found");
-}
-
-// Create a new MongoClient
-const client = new MongoClient(mongoURI);
-
-// Connect to the database
 const connectDB = async () => {
   try {
-    await client.connect();
-    console.log("MongoDB connected successfully");
-  } catch (error) {
-    console.error("Error connecting to MongoDB:", error.message);
-    process.exit(1); // Exit process with failure
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log("MongoDB connected");
+
+    mongoose.connection.on("connected", () => {
+      console.log("Mongoose connected to MongoDB");
+    });
+
+    mongoose.connection.on("error", (err) => {
+      console.error("Mongoose connection error:", err.message);
+    });
+
+    mongoose.connection.on("disconnected", () => {
+      console.log("Mongoose disconnected from MongoDB");
+    });
+  } catch (err) {
+    console.error(err.message);
+    process.exit(1);
   }
 };
 
-// Export the client and connect function
-module.exports = {
-  connectDB,
-  client,
-};
+// Graceful shutdown
+process.on("SIGINT", async () => {
+  await mongoose.connection.close();
+  console.log("Mongoose connection closed due to application termination");
+  process.exit(0);
+});
+
+module.exports = connectDB;
