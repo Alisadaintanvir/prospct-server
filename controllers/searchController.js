@@ -1,14 +1,11 @@
-const { client } = require("../config/db");
 const parseNumber = require("../utils/parseNumber");
-// const redis = require("../redisClient");
+const Contacts_V5 = require("../models/Contacts");
+const SavedItem = require("../models/SavedItem");
 
 const searchController = {
   search: async (req, res) => {
     try {
       const userId = req.user.userId;
-      const db = client.db();
-      const contactsCollection = db.collection("contacts_v5");
-      const savedItemCollection = db.collection("saved_items");
 
       const { filters = {}, excludedFilters = {} } = req.body;
 
@@ -252,34 +249,35 @@ const searchController = {
       }
 
       // Calculate saved items count
-      const savedItemsDoc = await savedItemCollection.findOne({ userId });
+      const savedItemsDoc = await SavedItem.findOne({ userId }).exec();
       const savedItemsIds = savedItemsDoc?.items || [];
       counts.saved = savedItemsIds.length;
 
       // Count the total number of matching documents
-      counts.total = await contactsCollection.count(query);
+      counts.total = await Contacts_V5.countDocuments(query).exec();
 
       if (viewType === "saved") {
         if (savedItemsIds.length === 0) {
           return res.status(200).json([]);
         }
 
-        results = await contactsCollection
-          .find({ _id: { $in: savedItemsIds }, ...query })
+        results = await Contacts_V5.find({
+          _id: { $in: savedItemsIds },
+          ...query,
+        })
           .skip((page - 1) * limit)
           .limit(limit)
-          .toArray();
+          .exec();
       } else if (viewType === "total") {
         // Exclude saved items from the total list
         if (savedItemsIds.length > 0) {
           query._id = { $nin: savedItemsIds };
         }
 
-        results = await contactsCollection
-          .find(query)
+        results = await Contacts_V5.find(query)
           .skip((page - 1) * limit)
           .limit(limit)
-          .toArray();
+          .exec();
       }
 
       res.status(200).json({

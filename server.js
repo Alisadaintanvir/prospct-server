@@ -3,9 +3,9 @@ const cors = require("cors");
 
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
-// const searchRoutes = require("./routes/searchRoutes");
-// const savedRoutes = require("./routes/savedRoutes");
-// const creditRoutes = require("./routes/creditRoutes");
+const searchRoutes = require("./routes/searchRoutes");
+const savedRoutes = require("./routes/savedRoutes");
+const creditRoutes = require("./routes/creditRoutes");
 
 const app = express();
 
@@ -33,9 +33,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use("/api", authRoutes);
-// app.use("/api", searchRoutes);
-// app.use("/api", savedRoutes);
-// app.use("/api/credits", creditRoutes);
+app.use("/api", searchRoutes);
+app.use("/api", savedRoutes);
+app.use("/api/credits", creditRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server is working fine.");

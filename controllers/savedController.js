@@ -1,9 +1,5 @@
-// controllers/savedController.js
-const { client } = require("../config/db");
-
-const db = client.db();
-const collection = db.collection("saved_items");
-const contactCollection = db.collection("contacts_v5");
+const SavedItem = require("../models/SavedItem");
+const Contacts_V5 = require("../models/Contacts");
 
 const savedController = {
   // Save or update items for a user
@@ -20,11 +16,11 @@ const savedController = {
       const itemsArray = Array.isArray(items) ? items : [items];
 
       // Find the existing entry for the user
-      const existingEntry = await collection.findOne({ userId });
+      const existingEntry = await SavedItem.findOne({ userId });
 
       if (existingEntry) {
         // Update existing entry
-        await collection.updateOne(
+        await SavedItem.findOneAndUpdate(
           { userId },
           {
             $addToSet: { items: { $each: itemsArray } },
@@ -33,7 +29,7 @@ const savedController = {
         );
       } else {
         // Insert new entry
-        await collection.insertOne({
+        await SavedItem.create({
           userId,
           items: itemsArray,
           createdAt: new Date(),
@@ -58,7 +54,9 @@ const savedController = {
       }
 
       // Fetch the saved items document for the user
-      const userDocument = await collection.findOne({ userId });
+      const userDocument = await SavedItem.findOne({ userId }).populate(
+        "items"
+      );
 
       if (!userDocument) {
         return res
@@ -70,15 +68,8 @@ const savedController = {
       const itemsArray = userDocument.items || [];
       const totalSavedItems = itemsArray.length;
 
-      // Fetch detailed information for the items
-      const itemDetails = await contactCollection
-        .find({
-          _id: { $in: itemsArray.map((id) => id) },
-        })
-        .toArray();
-
       res.status(200).json({
-        data: itemDetails,
+        data: itemsArray,
         totalSavedItems,
       });
     } catch (error) {

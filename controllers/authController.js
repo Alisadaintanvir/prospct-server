@@ -1,10 +1,5 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { ObjectId } = require("mongodb");
-// const { client } = require("../config/db");
-
-// const db = client.db();
-// const usersCollection = db.collection("users");
 
 const User = require("../models/User");
 
@@ -24,9 +19,18 @@ const authController = {
         email,
         password: hashedPassword,
         credits: {
-          emailCredits: 100,
-          phoneCredits: 30,
-          exportCredits: 30,
+          emailCredits: {
+            current: 100,
+            max: 100,
+          },
+          phoneCredits: {
+            current: 30,
+            max: 30,
+          },
+          exportCredits: {
+            current: 30,
+            max: 30,
+          },
         },
       });
       await newUser.save();

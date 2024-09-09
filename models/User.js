@@ -19,16 +19,34 @@ const userSchema = new mongoose.Schema({
   },
   credits: {
     emailCredits: {
-      type: Number,
-      default: 100,
+      current: {
+        type: Number,
+        default: 100,
+      },
+      max: {
+        type: Number,
+        default: 100,
+      },
     },
     phoneCredits: {
-      type: Number,
-      default: 30,
+      current: {
+        type: Number,
+        default: 30,
+      },
+      max: {
+        type: Number,
+        default: 30,
+      },
     },
     exportCredits: {
-      type: Number,
-      default: 30,
+      current: {
+        type: Number,
+        default: 30,
+      },
+      max: {
+        type: Number,
+        default: 30,
+      },
     },
   },
   token: {
