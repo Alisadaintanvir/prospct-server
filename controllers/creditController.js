@@ -5,20 +5,15 @@ const creditsController = {
     const userId = req.user.userId;
 
     try {
-      const { type } = req.body;
+      const { type, quantity = 1 } = req.body;
+
       if (!userId || !type) {
         return res
           .status(400)
           .json({ message: "User ID and type are required" });
       }
 
-      const updateFields = {};
-
-      if (type === "email") {
-        updateFields["credits.emailCredits.current"] = -1;
-      } else if (type === "phone") {
-        updateFields["credits.phoneCredits.current"] = -1;
-      } else {
+      if (!["email", "phone"].includes(type)) {
         return res.status(400).json({ error: "Invalid type" });
       }
 
@@ -27,13 +22,18 @@ const creditsController = {
       });
 
       if (!user) {
-        return res.status(404).json({ error: "User not found" });
+        return res.status(404).json({ message: "User not found" });
       }
 
       // Check if the user has enough credits
-      if (user.credits[`${type}Credits`].current <= 0) {
-        return res.status(400).json({ error: "Insufficient credits" });
+      const currentCredits = user.credits[`${type}Credits`]?.current || 0;
+
+      if (currentCredits < quantity) {
+        return res.status(400).json({ message: "Insufficient credits" });
       }
+
+      const updateFields = {};
+      updateFields[`credits.${type}Credits.current`] = -quantity;
 
       await User.findOneAndUpdate({ _id: userId }, { $inc: updateFields });
 

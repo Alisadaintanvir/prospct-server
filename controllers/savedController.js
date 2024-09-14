@@ -1,5 +1,6 @@
 const SavedItem = require("../models/SavedItem");
 const Contacts_V5 = require("../models/Contacts");
+const User = require("../models/User");
 
 const savedController = {
   // Save or update items for a user
@@ -14,6 +15,13 @@ const savedController = {
 
       // Ensure `items` is an array
       const itemsArray = Array.isArray(items) ? items : [items];
+
+      const itemDetails = SavedItem.find({ userId });
+      // Find the existing user
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
 
       // Find the existing entry for the user
       const existingEntry = await SavedItem.findOne({ userId });

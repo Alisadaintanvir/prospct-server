@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const User = require("../models/User");
+const Plan = require("../models/Plans");
 
 const authController = {
   registration: async (req, res) => {
@@ -13,6 +14,13 @@ const authController = {
         return res.status(400).json({ message: "User already exists" });
       }
 
+      let basicPlan = await Plan.findOne({ name: "Basic" });
+
+      if (!basicPlan) {
+        basicPlan = new Plan({});
+        await basicPlan.save();
+      }
+
       const hashedPassword = await bcrypt.hash(password, 10);
       const newUser = new User({
         username,
@@ -20,18 +28,19 @@ const authController = {
         password: hashedPassword,
         credits: {
           emailCredits: {
-            current: 100,
-            max: 100,
+            current: basicPlan.emailCredits.max,
+            max: basicPlan.emailCredits.max,
           },
           phoneCredits: {
-            current: 30,
-            max: 30,
+            current: basicPlan.phoneCredits.max,
+            max: basicPlan.phoneCredits.max,
           },
           exportCredits: {
-            current: 30,
-            max: 30,
+            current: basicPlan.exportCredits.max,
+            max: basicPlan.exportCredits.max,
           },
         },
+        plan: basicPlan._id,
       });
       await newUser.save();
 

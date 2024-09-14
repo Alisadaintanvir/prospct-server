@@ -49,6 +49,11 @@ const userSchema = new mongoose.Schema({
       },
     },
   },
+  plan: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Plan",
+    required: true,
+  },
   token: {
     type: String,
     default: null,
