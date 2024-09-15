@@ -10,6 +10,12 @@ const savedItemSchema = new mongoose.Schema({
     type: [mongoose.Schema.Types.ObjectId],
     required: true,
   },
+  listIds: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "List",
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,
