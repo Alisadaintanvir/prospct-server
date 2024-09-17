@@ -289,6 +289,19 @@ const searchController = {
       res.status(500).json({ error: "Something went wrong" });
     }
   },
+
+  getItemDetailsByIds: async (req, res) => {
+    try {
+      const { itemIds } = req.body;
+
+      const results = await Contacts_V5.find({ _id: { $in: itemIds } }).exec();
+
+      res.status(200).json({ results });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Something went wrong" });
+    }
+  },
 };
 
 module.exports = searchController;

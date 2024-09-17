@@ -19,12 +19,6 @@ const listSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
     },
-    items: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "SavedItem",
-      },
-    ],
   },
   { timestamps: true }
 );

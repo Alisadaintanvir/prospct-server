@@ -10,9 +10,9 @@ const savedController = {
       const { items, lists } = req.body;
       const userId = req.user.userId;
 
-      if (!userId || !items) {
-        return res.status(400).json({ error: "User ID and item are required" });
-      }
+      // if (!userId || !items) {
+      //   return res.status(400).json({ error: "User ID and item are required" });
+      // }
 
       // Ensure `items` is an array
       const itemsArray = Array.isArray(items) ? items : [items];

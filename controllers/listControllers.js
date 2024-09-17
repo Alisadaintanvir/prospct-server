@@ -42,9 +42,11 @@ const listController = {
     }
   },
 
-  getList: async (req, res) => {
+  //get lists of an user
+  getListByUserId: async (req, res) => {
+    const userId = req.user.userId;
     try {
-      const lists = await List.find();
+      const lists = await List.find({ userId });
       res.status(200).json(lists);
     } catch (err) {
       res.status(500).json(err);

@@ -13,7 +13,7 @@ const creditsController = {
           .json({ message: "User ID and type are required" });
       }
 
-      if (!["email", "phone"].includes(type)) {
+      if (!["email", "phone", "export"].includes(type)) {
         return res.status(400).json({ error: "Invalid type" });
       }
 
