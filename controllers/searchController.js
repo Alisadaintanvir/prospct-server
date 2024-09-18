@@ -249,9 +249,9 @@ const searchController = {
       }
 
       // Calculate saved items count
-      const savedItemsDoc = await SavedItem.findOne({ userId }).exec();
-      const savedItemsIds = savedItemsDoc?.items || [];
-      counts.saved = savedItemsIds.length;
+      const savedItemsDoc = await SavedItem.find({ userId });
+      const savedItemsIds = savedItemsDoc.map((doc) => doc.itemId);
+      counts.saved = savedItemsDoc.length;
 
       // Count the total number of matching documents
       counts.total = await Contacts_V5.countDocuments(query).exec();

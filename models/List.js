@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const listSchema = new mongoose.Schema(
+const ListSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -23,6 +23,9 @@ const listSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const List = mongoose.model("List", listSchema);
+// Add a compound index for uniqueness on userId and list name
+ListSchema.index({ userId: 1, slug: 1 }, { unique: true });
+
+const List = mongoose.model("List", ListSchema);
 
 module.exports = List;

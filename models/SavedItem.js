@@ -1,30 +1,26 @@
 const mongoose = require("mongoose");
 
-const savedItemSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
-  items: {
-    type: [mongoose.Schema.Types.ObjectId],
-    required: true,
-  },
-  listIds: [
-    {
+const savedItemSchema = new mongoose.Schema(
+  {
+    userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "List",
+      ref: "User",
+      required: true,
     },
-  ],
-  createdAt: {
-    type: Date,
-    default: Date.now,
+    itemId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "Contacts_v5",
+    },
+    listIds: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "List",
+      },
+    ],
   },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  { timestamps: true }
+);
 
 const SavedItem = mongoose.model("SavedItem", savedItemSchema);
 

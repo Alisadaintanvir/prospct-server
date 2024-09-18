@@ -7,114 +7,58 @@ const savedController = {
   // Save or update items for a user
   save: async (req, res) => {
     try {
-      const { items, lists } = req.body;
+      const { savedItems, listNames = [] } = req.body;
       const userId = req.user.userId;
 
-      // if (!userId || !items) {
-      //   return res.status(400).json({ error: "User ID and item are required" });
-      // }
-
-      // Ensure `items` is an array
-      const itemsArray = Array.isArray(items) ? items : [items];
-
-      // Find the existing user
-      const user = await User.findById(userId);
-      if (!user) {
-        return res.status(404).json({ error: "User not found" });
+      if (!userId || !savedItems) {
+        return res
+          .status(400)
+          .json({ error: "User ID and saved item are required" });
       }
 
-      const existingLists = await List.find({ userId, name: { $in: lists } });
+      // Ensure savedItems is always an array
+      const itemsToSave = Array.isArray(savedItems) ? savedItems : [savedItems];
 
-      // Find missing list names
-      const existingListNames = existingLists.map((list) => list.name);
-      const missingListNames = lists.filter(
-        (listName) => !existingListNames.includes(listName)
-      );
+      if (itemsToSave.length === 0) {
+        return res.status(400).json({ error: "No valid items to save" });
+      }
 
-      const createdLists = await List.insertMany(
-        missingListNames.map((name) => ({
-          userId,
-          name,
-          slug: name.replace(/\s+/g, "-").toLowerCase(),
-        })),
-        { ordered: false } // Continue inserting even if some documents fail
-      );
+      // Step 1: If lists are provided, create or fetch them
+      let listIds = [];
+      if (listNames.length > 0) {
+        const lists = await createOrFetchLists(userId, listNames);
+        listIds = lists.map((list) => list._id);
+      }
 
-      // Combine existing lists and newly created lists
-      const allLists = [...existingLists, ...createdLists];
-
-      // Map list names to their IDs
-      const listIdMap = allLists.reduce((acc, list) => {
-        acc[list.name] = list._id;
-        return acc;
-      }, {});
-
-      // Save items to each list
-      if (lists.length > 0) {
-        await Promise.all(
-          Object.entries(listIdMap).map(async ([listName, listId]) => {
-            if (!listId) {
-              return;
-            }
-
-            const existingEntry = await SavedItem.findOne({
-              userId,
-              listIds: listId,
-            });
-
-            if (existingEntry) {
-              // Update existing entry
-              await SavedItem.findOneAndUpdate(
-                { userId, listIds: listId },
-                {
-                  $addToSet: { items: { $each: itemsArray } },
-                  $set: { updatedAt: new Date() },
-                }
-              );
-            } else {
-              // Insert new entry
-              await SavedItem.create({
+      // Step 2: Prepare bulk operation for saving items
+      const bulkOps = itemsToSave.map((item) => {
+        const itemId = typeof item === "object" && item._id ? item._id : item;
+        return {
+          updateOne: {
+            filter: { userId, itemId },
+            update: {
+              $setOnInsert: {
                 userId,
-                listIds: listId,
-                items: itemsArray,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              });
-            }
-          })
-        );
-      } else {
-        // If no lists are provided, create a "general" entry
+                itemId,
+              },
+              $addToSet: { listIds: { $each: listIds } },
+            },
+            upsert: true,
+          },
+        };
+      });
 
-        // find existing saved entry
-        const existingEntry = await SavedItem.findOne({
-          userId,
-          listIds: { $eq: [] },
-        });
+      // Step 3: Execute bulk operation
+      const result = await SavedItem.bulkWrite(bulkOps);
 
-        if (existingEntry) {
-          // Update existing entry
-          await SavedItem.findOneAndUpdate(
-            { userId, listIds: { $eq: [] } },
-            {
-              $addToSet: { items: { $each: itemsArray } },
-              $set: { updatedAt: new Date() },
-            }
-          );
-        } else {
-          await SavedItem.create({
-            userId,
-            items: itemsArray,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          });
-        }
-      }
-
-      res.status(200).json({ message: "Item saved successfully" });
+      res.status(200).json({
+        message: "Items saved successfully",
+        inserted: result.upsertedCount,
+        modified: result.modifiedCount,
+      });
     } catch (error) {
       console.log("Error saving data:", error);
-      res.status(500).json({ error: "Failed to save item" });
+      res.status(500).json({ error: "Failed to save items" });
     }
   },
 
@@ -129,7 +73,7 @@ const savedController = {
 
       // Fetch the saved items document for the user
       const userDocument = await SavedItem.findOne({ userId }).populate(
-        "items"
+        "itemId"
       );
 
       if (!userDocument) {
@@ -154,3 +98,33 @@ const savedController = {
 };
 
 module.exports = savedController;
+
+// function to save or fetch list
+async function createOrFetchLists(userId, listNames) {
+  // Fetch existing lists that match the list names for the given user
+  const existingLists = await List.find({ userId, name: { $in: listNames } });
+
+  // Get the names of the existing lists
+  const existingListNames = existingLists.map((list) => list.name);
+
+  // Filter out new list names that don't exist yet
+  const newLists = listNames
+    .filter((name) => !existingListNames.includes(name))
+    .map((name) => ({
+      userId,
+      name,
+      slug: name.toLowerCase().replace(/\s+/g, "-"),
+    }));
+
+  // Insert new lists into the database
+  let insertedLists = [];
+  if (newLists.length > 0) {
+    insertedLists = await List.insertMany(newLists);
+  }
+
+  // Combine existing and newly created lists
+  const allLists = [...existingLists, ...insertedLists];
+
+  // Return both the existing and newly created lists
+  return allLists;
+}

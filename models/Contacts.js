@@ -8,4 +8,4 @@ const contactsV5Schema = new mongoose.Schema({
   _source: mongoose.Schema.Types.Mixed,
 });
 
-module.exports = mongoose.model("Contacts_V5", contactsV5Schema);
+module.exports = mongoose.model("Contacts_v5", contactsV5Schema);
