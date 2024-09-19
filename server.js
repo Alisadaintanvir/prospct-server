@@ -18,20 +18,17 @@ app.use(express.json());
 
 // Configure CORS properly
 const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = ["https://app.prospct.io", "http://localhost:5173"];
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "DELETE"],
+  origin: ["https://app.prospct.io", "http://localhost:5173"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
+  optionsSuccessStatus: 204,
 };
 
 app.use(cors(corsOptions));
+
+// Enable pre-flight requests for all routes
+app.options("*", cors(corsOptions));
 
 app.use("/api", authRoutes);
 app.use("/api", searchRoutes);

@@ -1,130 +1,96 @@
 const parseNumber = require("../utils/parseNumber");
 const Contacts_V5 = require("../models/Contacts");
 const SavedItem = require("../models/SavedItem");
+const List = require("../models/List");
 
 const searchController = {
   search: async (req, res) => {
     try {
-      const userId = req.user.userId;
-
+      const { userId } = req.user;
       const { filters = {}, excludedFilters = {} } = req.body;
-
+      const { limit = 25, currentPage = 1, viewType = "total" } = filters;
       const query = {};
-      const limit = filters.limit || 25;
-      const page = filters.currentPage || 1;
-      const viewType = filters.viewType || "total";
-
-      let results = [];
-      const counts = { total: "63M", new: 0, saved: 0 };
       const conditions = [];
       const exclusionConditions = [];
 
       const addCondition = (field, operator, values) => {
-        if (values && values.length > 0) {
+        if (Array.isArray(values) && values.length > 0) {
           conditions.push({ [field]: { [operator]: values } });
         }
       };
 
       const addExclusionCondition = (field, operator, values) => {
-        if (values && values.length > 0) {
+        if (Array.isArray(values) && values.length > 0) {
           exclusionConditions.push({ [field]: { [operator]: values } });
         }
       };
 
       // Apply filters
       // location country
-      if (Array.isArray(filters.countries)) {
-        addCondition(
-          "_source.person_location_country",
-          "$in",
-          filters.countries
-        );
-      }
+      addCondition("_source.person_location_country", "$in", filters.countries);
 
-      if (Array.isArray(excludedFilters.countries)) {
-        addExclusionCondition(
-          "_source.person_location_country",
-          "$nin",
-          excludedFilters.countries
-        );
-      }
+      addExclusionCondition(
+        "_source.person_location_country",
+        "$nin",
+        excludedFilters.countries
+      );
 
       // job title
-      if (Array.isArray(filters.jobTitle)) {
-        addCondition("_source.person_title", "$in", filters.jobTitle);
-      }
+      addCondition("_source.person_title", "$in", filters.jobTitle);
 
-      if (Array.isArray(excludedFilters.jobTitle)) {
-        addExclusionCondition(
-          "_source.person_title",
-          "$nin",
-          excludedFilters.jobTitle
-        );
-      }
+      addExclusionCondition(
+        "_source.person_title",
+        "$nin",
+        excludedFilters.jobTitle
+      );
 
       // seniority
-      if (Array.isArray(filters.seniority)) {
-        addCondition(
-          "_source.person_seniority",
-          "$in",
-          filters.seniority.map((s) => s.toLowerCase())
-        );
-      }
+      addCondition(
+        "_source.person_seniority",
+        "$in",
+        filters.seniority.map((s) => s.toLowerCase())
+      );
 
-      if (Array.isArray(excludedFilters.seniority)) {
-        addExclusionCondition(
-          "_source.person_seniority",
-          "$nin",
-          excludedFilters.seniority.map((s) => s.toLowerCase())
-        );
-      }
+      addExclusionCondition(
+        "_source.person_seniority",
+        "$nin",
+        excludedFilters.seniority.map((s) => s.toLowerCase())
+      );
 
       // industry
-      if (Array.isArray(filters.industry)) {
-        addCondition(
-          "_source.organization_industries",
-          "$in",
-          filters.industry.map((i) => i.toLowerCase())
-        );
-      }
+      addCondition(
+        "_source.organization_industries",
+        "$in",
+        filters.industry.map((i) => i.toLowerCase())
+      );
 
-      if (Array.isArray(excludedFilters.industry)) {
-        addExclusionCondition(
-          "_source.organization_industries",
-          "$nin",
-          excludedFilters.industry.map((i) => i.toLowerCase())
-        );
-      }
+      addExclusionCondition(
+        "_source.organization_industries",
+        "$nin",
+        excludedFilters.industry.map((i) => i.toLowerCase())
+      );
 
       // email status
-      if (Array.isArray(filters.emailStatus)) {
-        addCondition(
-          "_source.person_email_status_cd",
-          "$in",
-          filters.emailStatus
-        );
-      }
+      addCondition(
+        "_source.person_email_status_cd",
+        "$in",
+        filters.emailStatus
+      );
 
-      if (Array.isArray(excludedFilters.emailStatus)) {
-        addExclusionCondition(
-          "_source.person_email_status_cd",
-          "$nin",
-          excludedFilters.emailStatus
-        );
-      }
+      addExclusionCondition(
+        "_source.person_email_status_cd",
+        "$nin",
+        excludedFilters.emailStatus
+      );
 
       // person name
-      if (Array.isArray(filters.personName)) {
-        addCondition("_source.person_name", "$in", filters.personName);
-      }
+      addCondition("_source.person_name", "$in", filters.personName);
 
-      if (Array.isArray(excludedFilters.personName)) {
-        addExclusionCondition(
-          "_source.person_name",
-          "$nin",
-          excludedFilters.personName
-        );
-      }
+      addExclusionCondition(
+        "_source.person_name",
+        "$nin",
+        excludedFilters.personName
+      );
 
       // Handle ranges for employees and revenue
       const handleRange = (field, ranges) => {
@@ -239,54 +205,77 @@ const searchController = {
         exclusionConditions.push({ $and: emailTypeExclusions });
       }
 
-      // Apply all conditions
-      if (conditions.length > 0) {
-        query.$and = conditions;
-      }
+      // List Filter - Include
+      const [includeListIds, excludeListIds] = await Promise.all([
+        List.find({ userId, name: { $in: filters.list } }).select("_id"),
+        List.find({ userId, name: { $in: excludedFilters.list } }).select(
+          "_id"
+        ),
+      ]);
 
-      if (exclusionConditions.length > 0) {
+      const [includedSavedItemIds, excludedSavedItemIds] = await Promise.all([
+        fetchSavedItemsByListIds(
+          userId,
+          includeListIds.map((list) => list._id)
+        ),
+        fetchSavedItemsByListIds(
+          userId,
+          excludeListIds.map((list) => list._id)
+        ),
+      ]);
+
+      if (includedSavedItemIds.length > 0)
+        conditions.push({ _id: { $in: includedSavedItemIds } });
+      if (excludedSavedItemIds.length > 0)
+        exclusionConditions.push({ _id: { $nin: excludedSavedItemIds } });
+
+      // Combine all conditions
+      if (conditions.length > 0) query.$and = conditions;
+      if (exclusionConditions.length > 0)
         query.$and = [...(query.$and || []), ...exclusionConditions];
-      }
+
+      // Execute queries
+      const [savedItemsDoc, totalCount] = await Promise.all([
+        SavedItem.find({ userId }).select("itemId"),
+        Contacts_V5.countDocuments(query),
+      ]);
 
       // Calculate saved items count
-      const savedItemsDoc = await SavedItem.find({ userId });
       const savedItemsIds = savedItemsDoc.map((doc) => doc.itemId);
-      const savedItemDetails = await Contacts_V5.find({
+      const savedItemsCount = await Contacts_V5.countDocuments({
         _id: { $in: savedItemsIds },
         ...query,
       });
-      counts.saved = savedItemDetails.length;
 
-      // Count the total number of matching documents
-      counts.total = await Contacts_V5.countDocuments(query).exec();
-
+      let results;
       if (viewType === "saved") {
-        if (savedItemsIds.length === 0) {
-          return res.status(200).json([]);
-        }
-
-        results = await Contacts_V5.find({
-          _id: { $in: savedItemsIds },
-          ...query,
-        })
-          .skip((page - 1) * limit)
-          .limit(limit)
-          .exec();
+        results =
+          savedItemsIds.length > 0
+            ? await Contacts_V5.find({
+                _id: { $in: savedItemsIds },
+                ...query,
+              })
+                .skip((currentPage - 1) * limit)
+                .limit(limit)
+            : [];
       } else if (viewType === "total") {
         // Exclude saved items from the total list
-        if (savedItemsIds.length > 0) {
+        if (savedItemsIds.length > 0 && filters.list.length === 0) {
           query._id = { $nin: savedItemsIds };
         }
 
         results = await Contacts_V5.find(query)
-          .skip((page - 1) * limit)
-          .limit(limit)
-          .exec();
+          .skip((currentPage - 1) * limit)
+          .limit(limit);
       }
 
       res.status(200).json({
         results,
-        counts,
+        counts: {
+          total: totalCount,
+          saved: savedItemsCount,
+          new: 0,
+        },
       });
     } catch (error) {
       console.log(error);
@@ -309,3 +298,10 @@ const searchController = {
 };
 
 module.exports = searchController;
+
+// Function to fetch saved items based on list IDs
+async function fetchSavedItemsByListIds(userId, listIds) {
+  return listIds.length > 0
+    ? SavedItem.find({ userId, listIds: { $in: listIds } }).distinct("itemId")
+    : [];
+}
