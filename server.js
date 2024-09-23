@@ -31,8 +31,8 @@ app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
 app.use("/api", authRoutes);
-app.use("/api", searchRoutes);
-app.use("/api", savedRoutes);
+app.use("/api/search", searchRoutes);
+app.use("/api/saved", savedRoutes);
 app.use("/api/credits", creditRoutes);
 app.use("/api/list", listRoutes);
 

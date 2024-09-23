@@ -4,11 +4,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post("/search", authMiddleware, searchController.search);
-router.post(
-  "/search/ids",
-  authMiddleware,
-  searchController.getItemDetailsByIds
-);
+router.post("/", authMiddleware, searchController.search);
+router.post("/ids", authMiddleware, searchController.getItemDetailsByIds);
 
 module.exports = router;

@@ -5,7 +5,7 @@ const List = require("../models/List");
 
 const savedController = {
   // Save or update items for a user
-  save: async (req, res) => {
+  addSavedItems: async (req, res) => {
     try {
       const { savedItems, listNames = [] } = req.body;
       const userId = req.user.userId;

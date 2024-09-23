@@ -5,6 +5,6 @@ const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 
 router.post("/add", authMiddleware, listController.addList);
-router.get("/get", authMiddleware, listController.getListByUserId);
+router.get("/", authMiddleware, listController.getListByUserId);
 
 module.exports = router;
