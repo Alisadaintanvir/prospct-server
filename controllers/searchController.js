@@ -258,12 +258,16 @@ const searchController = {
                 .skip((currentPage - 1) * limit)
                 .limit(limit)
             : [];
-      } else if (viewType === "total") {
+      } else if (viewType === "new") {
         // Exclude saved items from the total list
         if (savedItemsIds.length > 0 && filters.list.length === 0) {
           query._id = { $nin: savedItemsIds };
         }
 
+        results = await Contacts_V5.find(query)
+          .skip((currentPage - 1) * limit)
+          .limit(limit);
+      } else {
         results = await Contacts_V5.find(query)
           .skip((currentPage - 1) * limit)
           .limit(limit);
@@ -274,7 +278,7 @@ const searchController = {
         counts: {
           total: totalCount,
           saved: savedItemsCount,
-          new: 0,
+          new: totalCount - savedItemsCount,
         },
       });
     } catch (error) {
