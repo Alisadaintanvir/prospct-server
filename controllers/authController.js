@@ -6,8 +6,17 @@ const Plan = require("../models/Plans");
 
 const authController = {
   registration: async (req, res) => {
+    console.log(req.body);
     try {
-      const { username, email, password } = req.body;
+      const {
+        email,
+        company,
+        firstName,
+        lastName,
+        mobile,
+        countryCode,
+        password,
+      } = req.body;
       const existingUser = await User.findOne({ email });
 
       if (existingUser) {
@@ -23,8 +32,12 @@ const authController = {
 
       const hashedPassword = await bcrypt.hash(password, 10);
       const newUser = new User({
-        username,
         email,
+        company,
+        firstName,
+        lastName,
+        mobile,
+        countryCode,
         password: hashedPassword,
         credits: {
           emailCredits: {

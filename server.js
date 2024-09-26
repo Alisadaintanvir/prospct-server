@@ -7,6 +7,8 @@ const searchRoutes = require("./routes/searchRoutes");
 const savedRoutes = require("./routes/savedRoutes");
 const creditRoutes = require("./routes/creditRoutes");
 const listRoutes = require("./routes/listRoutes");
+const savedSearchRoutes = require("./routes/savedSearchRoutes");
+const emailVerificationRoute = require("./routes/emailVerificationRoute");
 
 const app = express();
 
@@ -35,6 +37,8 @@ app.use("/api/search", searchRoutes);
 app.use("/api/saved", savedRoutes);
 app.use("/api/credits", creditRoutes);
 app.use("/api/list", listRoutes);
+app.use("/api/saved-search", savedSearchRoutes);
+app.use("/api/email-verify", emailVerificationRoute);
 
 app.get("/", (req, res) => {
   res.send("Server is working fine.");
