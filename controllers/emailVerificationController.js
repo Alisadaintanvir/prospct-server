@@ -4,10 +4,14 @@ const emailVerificationController = {
   singleEmailVerify: async (req, res) => {
     const debounce_api = process.env.DEBOUNCE_API;
     try {
-      const { email } = req.body;
-      const emailList = email
-        .split(/[\s,;]+/)
-        .filter((email) => email.length > 0);
+      const { emailList } = req.body;
+
+      // Check if the email list exceeds the limit of 20 emails
+      if (emailList.length > 20) {
+        return res.status(400).json({
+          error: "You can only verify a maximum of 20 emails at a time.",
+        });
+      }
 
       // Array to store each email's verification result
       const verificationResults = [];
@@ -18,13 +22,19 @@ const emailVerificationController = {
             `https://api.debounce.io/v1/?email=${email}&api=${debounce_api}`
           );
 
-          if (response.status === 200) {
+          if (response.status === 200 && response.data.success) {
+            const verificationCode = response.data.debounce.code;
             verificationResults.push({
+              email: email,
+              status: verificationCode,
+              date: new Date().toISOString(), // Add current date
               success: true,
-              data: response.data.debounce,
             });
           } else {
             verificationResults.push({
+              email: email,
+              status: "unknown",
+              date: new Date().toISOString(),
               success: false,
               message: "Verification failed for this email",
             });
@@ -33,8 +43,10 @@ const emailVerificationController = {
           // Handle any error that occurs during the API request
           verificationResults.push({
             email: email,
+            status: "unknown",
+            date: new Date().toISOString(),
             success: false,
-            message: `Error verifying email: ${error.message}`,
+            message: `Error verifying email: ${err.message}`,
           });
         }
       }

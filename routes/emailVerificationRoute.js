@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post(
   "/single",
-  //   authMiddleware,
+  authMiddleware,
   emailVerificationController.singleEmailVerify
 );
 module.exports = router;
