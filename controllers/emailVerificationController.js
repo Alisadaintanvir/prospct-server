@@ -71,10 +71,9 @@ const emailVerificationController = {
     try {
       const filePath = req.file.path;
       const fileLink = `${req.protocol}://${req.get("host")}/${filePath}`;
-      console.log(fileLink);
 
       const response = await axios.get(
-        `${debounce_bulk_api_url}?url=https://server.prospct.io/upload/1727522452564-sample-emails-csv.csv&api=${debounce_api_key}`,
+        `${debounce_bulk_api_url}?url=https://file.io/3GabpltxKdt0&api=${debounce_api_key}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -83,27 +82,27 @@ const emailVerificationController = {
       );
 
       const debounceListId = response.data.debounce.list_id;
-      console.log(debounceListId);
+      console.log(response.data);
 
-      const statusResponse = await axios.get(
-        `https://bulk.debounce.io/v1/status/?list_id=${debounceListId}&api=${debounce_api_key}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // const statusResponse = await axios.get(
+      //   `https://bulk.debounce.io/v1/status/?list_id=${debounceListId}&api=${debounce_api_key}`,
+      //   {
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //   }
+      // );
 
-      console.log(statusResponse.data);
+      // console.log(statusResponse.data);
 
-      if (response.status === 200 && response.data.success) {
-        res.status(200).json({
-          message: "Email verified successfully",
-          results: statusResponse.data,
-        });
-      } else {
-        res.status(500).json({ error: "Something went wrong" });
-      }
+      // if (response.status === 200 && response.data.success) {
+      //   res.status(200).json({
+      //     message: "Email verified successfully",
+      //     results: statusResponse.data,
+      //   });
+      // } else {
+      //   res.status(500).json({ error: "Something went wrong" });
+      // }
     } catch (err) {
       res.status(500).json({ error: "Something went wrong" });
     }
