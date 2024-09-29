@@ -74,7 +74,7 @@ const emailVerificationController = {
       console.log(fileLink);
 
       const response = await axios.get(
-        `${debounce_bulk_api_url}?url=https://server.prospct.io/upload/1727522452564-sample-emails-csv.csv&api=${debounce_api_key}`,
+        `${debounce_bulk_api_url}?url=${fileLink}&api=${debounce_api_key}`,
         {
           headers: {
             "Content-Type": "application/json",
