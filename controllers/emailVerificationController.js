@@ -2,7 +2,7 @@ const axios = require("axios");
 
 const emailVerificationController = {
   singleEmailVerify: async (req, res) => {
-    const debounce_api = process.env.DEBOUNCE_API;
+    const debounce_api_key = process.env.DEBOUNCE_API;
     try {
       const { emailList } = req.body;
 
@@ -19,7 +19,7 @@ const emailVerificationController = {
       for (const email of emailList) {
         try {
           const response = await axios.get(
-            `https://api.debounce.io/v1/?email=${email}&api=${debounce_api}`
+            `https://api.debounce.io/v1/?email=${email}&api=${debounce_api_key}`
           );
 
           if (response.status === 200 && response.data.success) {
@@ -55,6 +55,42 @@ const emailVerificationController = {
         message: "Email verified successfully",
         results: verificationResults,
       });
+    } catch (err) {
+      res.status(500).json({ error: "Something went wrong" });
+    }
+  },
+
+  bulkEmailVerify: async (req, res) => {
+    const debounce_api_key = process.env.DEBOUNCE_API;
+    const debounce_bulk_api_url = "https://bulk.debounce.io/v1/upload/";
+    // Check if file was uploaded
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    try {
+      const filePath = req.file.path;
+      const fileLink = `${req.protocol}://${req.get("host")}/${filePath}`;
+
+      const response = await axios.get(
+        `${debounce_bulk_api_url}?url=${fileLink}&api=${debounce_api_key}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log(response);
+
+      if (response.status === 200 && response.data.success) {
+        res.status(200).json({
+          message: "Email verified successfully",
+          results: response.data,
+        });
+      } else {
+        res.status(500).json({ error: "Something went wrong" });
+      }
     } catch (err) {
       res.status(500).json({ error: "Something went wrong" });
     }

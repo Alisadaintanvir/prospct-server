@@ -6,23 +6,23 @@ const List = require("../models/List");
 const savedController = {
   // Save or update items for a user
   addSavedItems: async (req, res) => {
+    const { savedItems, listNames = [] } = req.body;
+    const userId = req.user.userId;
+
+    if (!userId || !savedItems) {
+      return res
+        .status(400)
+        .json({ error: "User ID and saved item are required" });
+    }
+
+    // Ensure savedItems is always an array
+    const itemsToSave = Array.isArray(savedItems) ? savedItems : [savedItems];
+
+    if (itemsToSave.length === 0) {
+      return res.status(400).json({ error: "No valid items to save" });
+    }
+
     try {
-      const { savedItems, listNames = [] } = req.body;
-      const userId = req.user.userId;
-
-      if (!userId || !savedItems) {
-        return res
-          .status(400)
-          .json({ error: "User ID and saved item are required" });
-      }
-
-      // Ensure savedItems is always an array
-      const itemsToSave = Array.isArray(savedItems) ? savedItems : [savedItems];
-
-      if (itemsToSave.length === 0) {
-        return res.status(400).json({ error: "No valid items to save" });
-      }
-
       // Step 1: If lists are provided, create or fetch them
       let listIds = [];
       if (listNames.length > 0) {

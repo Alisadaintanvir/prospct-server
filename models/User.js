@@ -70,6 +70,11 @@ const userSchema = new mongoose.Schema({
     ref: "Plan",
     required: true,
   },
+  subscription: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Subscription",
+  },
+
   token: {
     type: String,
     default: null,

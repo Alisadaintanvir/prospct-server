@@ -6,7 +6,6 @@ const Plan = require("../models/Plans");
 
 const authController = {
   registration: async (req, res) => {
-    console.log(req.body);
     try {
       const {
         email,
@@ -41,16 +40,16 @@ const authController = {
         password: hashedPassword,
         credits: {
           emailCredits: {
-            current: basicPlan.emailCredits.max,
-            max: basicPlan.emailCredits.max,
+            current: basicPlan.features.emailCredits.max,
+            max: basicPlan.features.emailCredits.max,
           },
           phoneCredits: {
-            current: basicPlan.phoneCredits.max,
-            max: basicPlan.phoneCredits.max,
+            current: basicPlan.features.phoneCredits.max,
+            max: basicPlan.features.phoneCredits.max,
           },
           exportCredits: {
-            current: basicPlan.exportCredits.max,
-            max: basicPlan.exportCredits.max,
+            current: basicPlan.features.exportCredits.max,
+            max: basicPlan.features.exportCredits.max,
           },
         },
         plan: basicPlan._id,

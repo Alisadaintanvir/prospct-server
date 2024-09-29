@@ -48,23 +48,8 @@ app.get("/", (req, res) => {
   res.send("Server is working fine.");
 });
 
-// Upload endpoint
-app.post("/api/upload", upload.single("file"), (req, res) => {
-  res.send("File uploaded successfully");
-});
-
-// Error handling middleware for multer errors
-app.use((err, req, res, next) => {
-  if (err instanceof multer.MulterError) {
-    return res.status(400).send(err.message);
-  } else if (err) {
-    return res.status(400).send(err.message);
-  }
-  next();
-});
-
 // Serve uploaded images statically
-app.use("/upload", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
