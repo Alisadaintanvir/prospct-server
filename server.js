@@ -11,8 +11,6 @@ const listRoutes = require("./routes/listRoutes");
 const savedSearchRoutes = require("./routes/savedSearchRoutes");
 const emailVerificationRoute = require("./routes/emailVerificationRoute");
 const path = require("path");
-const upload = require("./config/multerConfig");
-const authMiddleware = require("./middleware/authMiddleware");
 
 const app = express();
 
