@@ -242,12 +242,17 @@ const pollVerificationStatus = async (listId, apiKey) => {
       ) {
         console.log("Verification completed");
         return statusResponse.data.debounce;
-      } else if (statusResponse.data.debounce.status === "preparing") {
+      } else if (
+        statusResponse.data.debounce.status === "preparing" ||
+        statusResponse.data.debounce.status === "queued"
+      ) {
+        // Log the current attempt and status
         console.log(
           `Attempt ${attempt + 1}: Still processing... (${
             statusResponse.data.debounce.percentage
           })`
         );
+        console.log(`Current status: ${statusResponse.data.debounce.status}`);
       } else {
         console.error("Unexpected response:", statusResponse.data);
         break;
