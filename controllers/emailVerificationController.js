@@ -248,7 +248,8 @@ const pollVerificationStatus = async (
       } else if (
         statusResponse.data.debounce.status === "preparing" ||
         statusResponse.data.debounce.status === "queued" ||
-        statusResponse.data.debounce.status === "validating"
+        statusResponse.data.debounce.status === "validating" ||
+        statusResponse.data.debounce.status === "processing"
       ) {
         // Log the current attempt and status
         console.log(
