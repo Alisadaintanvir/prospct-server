@@ -82,6 +82,8 @@ const emailVerificationController = {
         }
       );
 
+      console.log("uploadresponse", uploadResponse.data);
+
       if (uploadResponse.status !== 200 || !uploadResponse.data.success) {
         return res
           .status(500)
