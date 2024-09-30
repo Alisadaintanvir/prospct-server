@@ -225,7 +225,7 @@ const pollVerificationStatus = async (
   listId,
   apiKey,
   maxRetries = 10,
-  retryDelay = 10000
+  retryDelay = 60000
 ) => {
   const debounce_status_api_url = `https://bulk.debounce.io/v1/status/?list_id=${listId}&api=${apiKey}`;
 
