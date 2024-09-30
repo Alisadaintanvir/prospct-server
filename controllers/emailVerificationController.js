@@ -232,6 +232,8 @@ const pollVerificationStatus = async (listId, apiKey) => {
         },
       });
 
+      console.log(statusResponse.data);
+
       if (
         statusResponse.data.success &&
         statusResponse.data.debounce.status === "complete"
