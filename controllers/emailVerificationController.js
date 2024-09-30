@@ -95,7 +95,7 @@ const emailVerificationController = {
       // const debounceListId = "699483";
 
       // Step 2: Poll for verification status
-      const verificationResult = await pollVerificationStatus(
+      const verificationResult = await statusVerification(
         debounceListId,
         debounce_api_key
       );
@@ -219,6 +219,23 @@ const emailVerificationController = {
 };
 
 module.exports = emailVerificationController;
+
+const statusVerification = async (listId, apiKey) => {
+  const debounce_status_api_url = `https://bulk.debounce.io/v1/status/?list_id=${listId}&api=${apiKey}`;
+  try {
+    const statusResponse = await axios.get(debounce_status_api_url, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    console.log(statusResponse.data);
+
+    return statusResponse.data.debounce.status;
+  } catch (error) {
+    console.error(error);
+    return "error";
+  }
+};
 
 // Helper function to poll the status of the verification process
 const pollVerificationStatus = async (listId, apiKey) => {
