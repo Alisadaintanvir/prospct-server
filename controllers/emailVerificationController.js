@@ -236,12 +236,16 @@ const pollVerificationStatus = async (listId, apiKey) => {
 
       if (
         statusResponse.data.success &&
-        statusResponse.data.debounce.status === "complete"
+        statusResponse.data.debounce.status === "completed"
       ) {
         console.log("Verification completed");
         return statusResponse.data.debounce;
-      } else if (statusResponse.data.debounce.status === "processing") {
-        console.log(`Attempt ${attempt + 1}: Still processing...`);
+      } else if (statusResponse.data.debounce.status === "preparing") {
+        console.log(
+          `Attempt ${attempt + 1}: Still processing... (${
+            statusResponse.data.debounce.percentage
+          })`
+        );
       } else {
         console.error("Unexpected response:", statusResponse.data);
         break;
