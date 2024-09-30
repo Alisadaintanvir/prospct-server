@@ -82,33 +82,31 @@ const emailVerificationController = {
         }
       );
 
-      console.log(uploadResponse.data);
-
       if (uploadResponse.status !== 200 || !uploadResponse.data.success) {
         return res
           .status(500)
           .json({ error: "Failed to upload file to Debounce" });
       }
 
-      // const debounceListId = uploadResponse.data.debounce.list_id;
-      // console.log(`List ID received: ${debounceListId}`);
-      // // const debounceListId = "699483";
+      const debounceListId = uploadResponse.data.debounce.list_id;
+      console.log(`List ID received: ${debounceListId}`);
+      // const debounceListId = "699483";
 
-      // // Step 2: Poll for verification status
-      // const verificationResult = await pollVerificationStatus(
-      //   debounceListId,
-      //   debounce_api_key
-      // );
+      // Step 2: Poll for verification status
+      const verificationResult = await pollVerificationStatus(
+        debounceListId,
+        debounce_api_key
+      );
 
-      // // Step 3: Respond with the verification result
-      // if (verificationResult) {
-      //   return res.status(200).json({
-      //     message: "Email verification completed",
-      //     results: verificationResult,
-      //   });
-      // } else {
-      //   return res.status(500).json({ error: "Verification process failed" });
-      // }
+      // Step 3: Respond with the verification result
+      if (verificationResult) {
+        return res.status(200).json({
+          message: "Email verification completed",
+          results: verificationResult,
+        });
+      } else {
+        return res.status(500).json({ error: "Verification process failed" });
+      }
     } catch (err) {
       console.error("Error during email verification process:", err);
       return res.status(500).json({ error: "Something went wrong" });

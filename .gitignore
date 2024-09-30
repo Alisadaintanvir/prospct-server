@@ -123,3 +123,6 @@ dist
 .vscode-test
 
 ecosystem.config.js
+
+#upload folder 
+uploads/
