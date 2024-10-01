@@ -28,7 +28,7 @@ router.delete(
   emailVerificationController.deleteFile
 );
 
-router.get(
+router.post(
   "/bulk",
   authMiddleware,
   emailVerificationController.bulkEmailVerify

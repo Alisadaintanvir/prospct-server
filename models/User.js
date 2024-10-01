@@ -54,10 +54,19 @@ const userSchema = new mongoose.Schema({
         default: 30,
       },
     },
+    verificationCredits: {
+      current: {
+        type: Number,
+        default: 50,
+      },
+      max: {
+        type: Number,
+        default: 50,
+      },
+    },
     exportCredits: {
       current: {
         type: Number,
-        default: 30,
       },
       max: {
         type: Number,

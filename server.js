@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const multer = require("multer");
+const path = require("path");
 
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
@@ -10,7 +10,7 @@ const creditRoutes = require("./routes/creditRoutes");
 const listRoutes = require("./routes/listRoutes");
 const savedSearchRoutes = require("./routes/savedSearchRoutes");
 const emailVerificationRoute = require("./routes/emailVerificationRoute");
-const path = require("path");
+const planRoutes = require("./routes/planRoutes");
 
 const app = express();
 
@@ -41,6 +41,7 @@ app.use("/api/credits", creditRoutes);
 app.use("/api/list", listRoutes);
 app.use("/api/saved-search", savedSearchRoutes);
 app.use("/api/email-verify", emailVerificationRoute);
+app.use("/api/plans", planRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server is working fine.");

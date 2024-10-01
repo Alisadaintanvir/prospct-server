@@ -14,8 +14,9 @@ const BulkEmailFileSchema = new mongoose.Schema(
       type: String,
       required: true,
       default: "unverified",
-      enum: ["unverified", "verified", "pending"],
+      enum: ["unverified", "verified", "pending", "processing", "completed"],
     },
+    downloadLink: { type: String },
   },
   {
     timestamps: true,

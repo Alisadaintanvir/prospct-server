@@ -6,16 +6,39 @@ const planSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      default: "Basic",
+      default: "Free",
     },
     description: {
       type: String,
-      default: "Basic Plan",
+      default: "Free Plan",
     },
-    price: {
-      type: Number,
-      required: true,
-      default: 0,
+    pricing: {
+      monthly: {
+        price: {
+          type: Number,
+          default: 0,
+          min: [0, "Price cannot be negative"],
+        },
+        discount: {
+          type: Number,
+          default: 0,
+          min: [0, "Discount cannot be negative"],
+          max: [100, "Discount cannot exceed 100%"],
+        },
+      },
+      yearly: {
+        price: {
+          type: Number,
+          default: 0,
+          min: [0, "Price cannot be negative"],
+        },
+        discount: {
+          type: Number,
+          default: 0,
+          min: [0, "Discount cannot be negative"],
+          max: [100, "Discount cannot exceed 100%"],
+        },
+      },
     },
     duration: {
       type: String,
@@ -29,20 +52,20 @@ const planSchema = new mongoose.Schema(
       phoneCredits: {
         max: { type: Number, default: 30 },
       },
+      verificationCredits: {
+        max: { type: Number, default: 50 },
+      },
       exportCredits: {
-        max: { type: Number, default: 15 },
+        max: { type: Number },
       },
       apiAccess: { type: Boolean, default: false },
       prioritySupport: { type: Boolean, default: false },
-    },
-    discount: {
-      type: Number,
-      default: 0, // Discount in percentage
     },
     status: {
       type: String,
       enum: ["active", "inactive"],
       default: "active",
+      required: true,
     },
   },
   { timestamps: true }

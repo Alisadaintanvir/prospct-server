@@ -4,6 +4,7 @@ const BulkEmailFile = require("../models/BulkEmailFile");
 const User = require("../models/User");
 const csvParser = require("csv-parser");
 const emailVerificationQueue = require("../queues/emailVerificationQueue");
+const path = require("path");
 
 const emailVerificationController = {
   singleEmailVerify: async (req, res) => {
@@ -70,9 +71,17 @@ const emailVerificationController = {
     const debounce_bulk_api_url = "https://bulk.debounce.io/v1/upload/";
 
     try {
-      // Get the file path
-      const { filepath } = req.query;
       const userId = req.user.userId;
+      const { fileId } = req.body;
+
+      // Get the file path
+      // const { filepath } = req.query
+
+      const filepath =
+        "https://server.prospct.io/uploads/csv/sample-emails.csv";
+
+      // Extract the file name from the URL (optional)
+      const fileName = path.basename(filepath);
 
       // Step 1: Send the file link to Debounce API
       const uploadResponse = await axios.get(
@@ -94,45 +103,30 @@ const emailVerificationController = {
 
       const debounceListId = uploadResponse.data.debounce.list_id;
       console.log(`List ID received: ${debounceListId}`);
-      // const debounceListId = "699483";
 
-      // Create a new file entry in the database with status "processing"
-      const newFile = new BulkEmailFile({
-        fileName: req.file.originalname,
-        filePath: req.file.path,
-        user: userId,
+      // Update the status of the existing file to "processing"
+      await BulkEmailFile.findByIdAndUpdate(fileId, {
         status: "processing",
       });
 
-      const savedFile = await newFile.save();
-
       // Queue the email verification job
-      emailVerificationQueue.add({
-        listId: debounceListId,
-        apiKey: debounce_api_key,
-        fileId: savedFile._id,
-      });
-
-      // // Step 2: Poll for verification status
-      // const verificationResult = await pollVerificationStatus(
-      //   debounceListId,
-      //   debounce_api_key
-      // );
-
-      // // Step 3: Respond with the verification result
-      // if (verificationResult) {
-      //   return res.status(200).json({
-      //     message: "Email verification completed",
-      //     results: verificationResult,
-      //   });
-      // } else {
-      //   return res.status(500).json({ error: "Verification process failed" });
-      // }
+      emailVerificationQueue
+        .add({
+          listId: debounceListId,
+          apiKey: debounce_api_key,
+          fileId: fileId,
+        })
+        .then((job) => {
+          console.log(`Job successfully added with ID: ${job.id}`);
+        })
+        .catch((err) => {
+          console.error(`Failed to add job: ${err.message}`);
+        });
 
       // Return a response immediately
       res.status(200).json({
         message: "Email verification started. You can check the status later.",
-        fileId: savedFile._id,
+        fileId,
       });
     } catch (err) {
       console.error("Error during email verification process:", err);

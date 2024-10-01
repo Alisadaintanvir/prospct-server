@@ -22,11 +22,11 @@ const authController = {
         return res.status(400).json({ message: "User already exists" });
       }
 
-      let basicPlan = await Plan.findOne({ name: "Basic" });
+      let freePlan = await Plan.findOne({ name: "Free" });
 
-      if (!basicPlan) {
-        basicPlan = new Plan({});
-        await basicPlan.save();
+      if (!freePlan) {
+        freePlan = new Plan({});
+        await freePlan.save();
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -47,12 +47,12 @@ const authController = {
             current: basicPlan.features.phoneCredits.max,
             max: basicPlan.features.phoneCredits.max,
           },
-          exportCredits: {
-            current: basicPlan.features.exportCredits.max,
-            max: basicPlan.features.exportCredits.max,
+          verificationCredits: {
+            current: basicPlan.features.verificationCredits.max,
+            max: basicPlan.features.verificationCredits.max,
           },
         },
-        plan: basicPlan._id,
+        plan: freePlan._id,
       });
       await newUser.save();
 
