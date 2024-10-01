@@ -3,6 +3,7 @@ const fs = require("fs");
 const BulkEmailFile = require("../models/BulkEmailFile");
 const User = require("../models/User");
 const csvParser = require("csv-parser");
+const emailVerificationQueue = require("../queues/emailVerificationQueue");
 
 const emailVerificationController = {
   singleEmailVerify: async (req, res) => {
@@ -71,6 +72,7 @@ const emailVerificationController = {
     try {
       // Get the file path
       const { filepath } = req.query;
+      const userId = req.user.userId;
 
       // Step 1: Send the file link to Debounce API
       const uploadResponse = await axios.get(
@@ -94,21 +96,44 @@ const emailVerificationController = {
       console.log(`List ID received: ${debounceListId}`);
       // const debounceListId = "699483";
 
-      // Step 2: Poll for verification status
-      const verificationResult = await pollVerificationStatus(
-        debounceListId,
-        debounce_api_key
-      );
+      // Create a new file entry in the database with status "processing"
+      const newFile = new BulkEmailFile({
+        fileName: req.file.originalname,
+        filePath: req.file.path,
+        user: userId,
+        status: "processing",
+      });
 
-      // Step 3: Respond with the verification result
-      if (verificationResult) {
-        return res.status(200).json({
-          message: "Email verification completed",
-          results: verificationResult,
-        });
-      } else {
-        return res.status(500).json({ error: "Verification process failed" });
-      }
+      const savedFile = await newFile.save();
+
+      // Queue the email verification job
+      emailVerificationQueue.add({
+        listId: debounceListId,
+        apiKey: debounce_api_key,
+        fileId: savedFile._id,
+      });
+
+      // // Step 2: Poll for verification status
+      // const verificationResult = await pollVerificationStatus(
+      //   debounceListId,
+      //   debounce_api_key
+      // );
+
+      // // Step 3: Respond with the verification result
+      // if (verificationResult) {
+      //   return res.status(200).json({
+      //     message: "Email verification completed",
+      //     results: verificationResult,
+      //   });
+      // } else {
+      //   return res.status(500).json({ error: "Verification process failed" });
+      // }
+
+      // Return a response immediately
+      res.status(200).json({
+        message: "Email verification started. You can check the status later.",
+        fileId: savedFile._id,
+      });
     } catch (err) {
       console.error("Error during email verification process:", err);
       return res.status(500).json({ error: "Something went wrong" });
