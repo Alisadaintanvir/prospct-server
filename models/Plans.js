@@ -67,6 +67,7 @@ const planSchema = new mongoose.Schema(
       default: "active",
       required: true,
     },
+    recommended: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
