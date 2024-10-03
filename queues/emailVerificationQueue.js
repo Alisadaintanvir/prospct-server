@@ -1,6 +1,7 @@
 const Queue = require("bull");
 const axios = require("axios");
 const BulkEmailFile = require("../models/BulkEmailFile");
+const { emitVerificationUpdate } = require("../utils/socket");
 
 const emailVerificationQueue = new Queue("email-verification", {
   redis: {
@@ -76,18 +77,22 @@ emailVerificationQueue.process(async (job, done) => {
     const verificationResult = await pollVerificationStatus(listId, apiKey);
 
     if (verificationResult) {
+      // Emit the real-time status update
+      emitVerificationUpdate(fileId, "completed");
       await BulkEmailFile.findByIdAndUpdate(fileId, {
         filePath: verificationResult.download_link,
         status: "completed",
       });
       done(null, verificationResult);
     } else {
+      emitVerificationUpdate(fileId, "failed");
       await BulkEmailFile.findByIdAndUpdate(fileId, {
         status: "failed",
       });
       done(new Error("Verification process timed out"));
     }
   } catch (error) {
+    emitVerificationUpdate(fileId, "failed");
     console.error("Error processing email verification job:", error);
     await BulkEmailFile.findByIdAndUpdate(fileId, {
       status: "failed",

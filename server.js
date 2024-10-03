@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const { initSocket } = require("./utils/socket");
+const http = require("http");
 
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
@@ -19,6 +21,10 @@ const PORT = process.env.PORT || 5000;
 connectDB();
 
 app.use(express.json());
+
+const server = http.createServer(app);
+// Initialize Socket.IO with the server instance
+initSocket(server);
 
 // Configure CORS properly
 const corsOptions = {
@@ -50,6 +56,6 @@ app.get("/", (req, res) => {
 // Serve uploaded images statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
