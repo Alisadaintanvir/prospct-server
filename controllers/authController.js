@@ -40,16 +40,16 @@ const authController = {
         password: hashedPassword,
         credits: {
           emailCredits: {
-            current: basicPlan.features.emailCredits.max,
-            max: basicPlan.features.emailCredits.max,
+            current: freePlan.features.emailCredits.max,
+            max: freePlan.features.emailCredits.max,
           },
           phoneCredits: {
-            current: basicPlan.features.phoneCredits.max,
-            max: basicPlan.features.phoneCredits.max,
+            current: freePlan.features.phoneCredits.max,
+            max: freePlan.features.phoneCredits.max,
           },
           verificationCredits: {
-            current: basicPlan.features.verificationCredits.max,
-            max: basicPlan.features.verificationCredits.max,
+            current: freePlan.features.verificationCredits.max,
+            max: freePlan.features.verificationCredits.max,
           },
         },
         plan: freePlan._id,
