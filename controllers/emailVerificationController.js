@@ -68,7 +68,6 @@ const emailVerificationController = {
 
   bulkEmailVerify: async (req, res) => {
     const debounce_api_key = process.env.DEBOUNCE_API;
-    const debounce_bulk_api_url = "https://bulk.debounce.io/v1/upload/";
 
     try {
       const userId = req.user.userId;
