@@ -29,7 +29,7 @@ initSocket(server);
 // Configure CORS properly
 const corsOptions = {
   origin: ["https://app.prospct.io", "http://localhost:5173"],
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
   optionsSuccessStatus: 204,
