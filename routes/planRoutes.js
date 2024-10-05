@@ -5,6 +5,7 @@ const express = require("express");
 const router = express.Router();
 
 router.get("/", authMiddleware, planController.getPlans);
-router.post("/upgrade-plan", authMiddleware, planController.upgradePlan);
+router.get("/:id", authMiddleware, planController.getPlanById);
+router.post("/upgrade", authMiddleware, planController.upgradePlan);
 
 module.exports = router;
