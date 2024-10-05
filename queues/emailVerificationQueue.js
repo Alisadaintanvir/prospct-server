@@ -24,7 +24,7 @@ const pollVerificationStatus = async (
   listId,
   apiKey,
   maxRetries = 20,
-  retryDelay = 60000
+  retryDelay = 200000
 ) => {
   const debounce_status_api_url = `https://bulk.debounce.io/v1/status/?list_id=${listId}&api=${apiKey}`;
 
@@ -70,11 +70,41 @@ const pollVerificationStatus = async (
 };
 
 // Process jobs from the queue
-emailVerificationQueue.process(async (job, done) => {
-  const { listId, apiKey, fileId } = job.data;
+emailVerificationQueue.process(1, async (job, done) => {
+  const { listId, apiKey, fileId, filePath } = job.data;
+  const debounce_bulk_api_url = "https://bulk.debounce.io/v1/upload/";
 
   try {
-    const verificationResult = await pollVerificationStatus(listId, apiKey);
+    // Step 1: Send the file link to Debounce API
+    const uploadResponse = await axios.get(
+      `${debounce_bulk_api_url}?url=${filePath}&api=${apiKey}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("uploadresponse", uploadResponse.data);
+
+    if (uploadResponse.status !== 200 || !uploadResponse.data.success) {
+      return res
+        .status(500)
+        .json({ error: "Failed to upload file to Debounce" });
+    }
+
+    const debounceListId = uploadResponse.data.debounce.list_id;
+    console.log(`List ID received: ${debounceListId}`);
+
+    // Update the status of the existing file to "processing"
+    await BulkEmailFile.findByIdAndUpdate(fileId, {
+      status: "processing",
+    });
+
+    const verificationResult = await pollVerificationStatus(
+      debounceListId,
+      apiKey
+    );
 
     if (verificationResult) {
       // Emit the real-time status update
@@ -103,7 +133,7 @@ emailVerificationQueue.process(async (job, done) => {
 
 // Optional: Listen to job events for logging or notifications
 emailVerificationQueue.on("completed", (job, result) => {
-  console.log(`Job completed with result: ${result}`);
+  console.log(`Job completed`);
   // Optionally, send a notification to the user here
 });
 

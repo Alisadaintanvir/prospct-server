@@ -75,46 +75,48 @@ const emailVerificationController = {
       const { fileId } = req.body;
 
       // Get the file path
-      // const { filepath } = req.query
+      // const { filePath } = req.body;
+      // console.log(filePath);
 
-      const filepath =
+      const filePath =
         "https://server.prospct.io/uploads/csv/sample-emails.csv";
 
       // Extract the file name from the URL (optional)
-      const fileName = path.basename(filepath);
+      // const fileName = path.basename(filepath);
 
-      // Step 1: Send the file link to Debounce API
-      const uploadResponse = await axios.get(
-        `${debounce_bulk_api_url}?url=${filepath}&api=${debounce_api_key}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      // // Step 1: Send the file link to Debounce API
+      // const uploadResponse = await axios.get(
+      //   `${debounce_bulk_api_url}?url=${filepath}&api=${debounce_api_key}`,
+      //   {
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //     },
+      //   }
+      // );
 
-      console.log("uploadresponse", uploadResponse.data);
+      // console.log("uploadresponse", uploadResponse.data);
 
-      if (uploadResponse.status !== 200 || !uploadResponse.data.success) {
-        return res
-          .status(500)
-          .json({ error: "Failed to upload file to Debounce" });
-      }
+      // if (uploadResponse.status !== 200 || !uploadResponse.data.success) {
+      //   return res
+      //     .status(500)
+      //     .json({ error: "Failed to upload file to Debounce" });
+      // }
 
-      const debounceListId = uploadResponse.data.debounce.list_id;
-      console.log(`List ID received: ${debounceListId}`);
+      // const debounceListId = uploadResponse.data.debounce.list_id;
+      // console.log(`List ID received: ${debounceListId}`);
 
-      // Update the status of the existing file to "processing"
-      await BulkEmailFile.findByIdAndUpdate(fileId, {
-        status: "processing",
-      });
+      // // Update the status of the existing file to "processing"
+      // await BulkEmailFile.findByIdAndUpdate(fileId, {
+      //   status: "processing",
+      // });
 
       // Queue the email verification job
       emailVerificationQueue
         .add({
-          listId: debounceListId,
+          // listId: debounceListId,
           apiKey: debounce_api_key,
           fileId: fileId,
+          filePath,
         })
         .then((job) => {
           console.log(`Job successfully added with ID: ${job.id}`);

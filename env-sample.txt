@@ -1,0 +1,7 @@
+# MONGODB_URI = "database uri" 
+JWT_SECRET = "secret"
+DEBOUNCE_API = ""
+
+REDIS_HOST = "redis-host"
+REDIS_PORT = "port"
+REDIS_PASSWORD = "password"
