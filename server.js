@@ -13,6 +13,7 @@ const listRoutes = require("./routes/listRoutes");
 const savedSearchRoutes = require("./routes/savedSearchRoutes");
 const emailVerificationRoute = require("./routes/emailVerificationRoute");
 const planRoutes = require("./routes/planRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use("/api/list", listRoutes);
 app.use("/api/saved-search", savedSearchRoutes);
 app.use("/api/email-verify", emailVerificationRoute);
 app.use("/api/plans", planRoutes);
+app.use("/api/payment", paymentRoutes);
 
 app.get("/", (req, res) => {
   res.send("Server is working fine.");
