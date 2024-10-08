@@ -9,4 +9,14 @@ router.post(
   paymentController.createOrUpdateFastspringProduct
 );
 
+router.post(
+  "/stripe/create-payment-intent",
+  paymentController.createStripePaymentIntent
+);
+router.post(
+  "/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  paymentController.stripeWebhook
+);
+
 module.exports = router;
