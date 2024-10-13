@@ -75,7 +75,7 @@ const authController = {
       }
 
       // Find user by email
-      const existingUser = await User.findOne({ email });
+      const existingUser = await User.findOne({ email: email });
 
       if (!existingUser) {
         return res.status(401).json({ message: "Invalid email or password" });
