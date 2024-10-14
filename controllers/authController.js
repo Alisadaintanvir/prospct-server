@@ -3,6 +3,9 @@ const jwt = require("jsonwebtoken");
 
 const User = require("../models/User");
 const Plan = require("../models/Plans");
+const { OAuth2Client } = require("google-auth-library");
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const authController = {
   registration: async (req, res) => {
@@ -16,6 +19,13 @@ const authController = {
         countryCode,
         password,
       } = req.body;
+
+      if (!email || !password) {
+        return res
+          .status(400)
+          .json({ message: "Email and password are required" });
+      }
+
       const existingUser = await User.findOne({ email });
 
       if (existingUser) {
@@ -157,6 +167,85 @@ const authController = {
     } catch (error) {
       console.log(error);
       res.status(500).json({ error: "Something went wrong" });
+    }
+  },
+
+  googleAuth: async (req, res) => {
+    try {
+      const { token } = req.body;
+      const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const { email, name, picture } = ticket.getPayload();
+
+      let user = await User.findOne({ email });
+
+      if (!user) {
+        // If the user doesn't exist, create a new one
+        let freePlan = await Plan.findOne({ name: "Free" });
+
+        if (!freePlan) {
+          freePlan = new Plan({});
+          await freePlan.save();
+        }
+
+        user = new User({
+          email,
+          firstName: name.split(" ")[0],
+          lastName: name.split(" ").slice(1).join(" "),
+          profilePicture: picture,
+          googleId: ticket.getUserId(),
+          credits: {
+            emailCredits: {
+              current: freePlan.features.emailCredits.max,
+              max: freePlan.features.emailCredits.max,
+            },
+            phoneCredits: {
+              current: freePlan.features.phoneCredits.max,
+              max: freePlan.features.phoneCredits.max,
+            },
+            verificationCredits: {
+              current: freePlan.features.verificationCredits.max,
+              max: freePlan.features.verificationCredits.max,
+            },
+          },
+          plan: freePlan._id,
+        });
+        await user.save();
+      } else if (!user.googleId) {
+        // If the user exists but doesn't have a googleId, update it
+        user.googleId = ticket.getUserId();
+        await user.save();
+      }
+
+      // Generate token
+      const jwtToken = jwt.sign(
+        { userId: user._id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "3h" }
+      );
+
+      // Update user token
+      user.token = jwtToken;
+      await user.save();
+
+      res.status(200).json({
+        message: "Google authentication successful",
+        accessToken: jwtToken,
+        user: {
+          id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong during Google authentication" });
     }
   },
 };

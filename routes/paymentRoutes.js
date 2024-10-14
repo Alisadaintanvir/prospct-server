@@ -20,4 +20,8 @@ router.post(
   paymentController.fastSpringWebhook
 );
 
+router.post("/coinpayments", paymentController.createCoinPaymentsPayment);
+
+router.post("/coinpayments/ipn", paymentController.coinpaymentsIPN);
+
 module.exports = router;

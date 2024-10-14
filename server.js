@@ -41,7 +41,7 @@ app.use(cors(corsOptions));
 // Enable pre-flight requests for all routes
 app.options("*", cors(corsOptions));
 
-app.use("/api", authRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/search", searchRoutes);
 app.use("/api/saved", savedRoutes);
 app.use("/api/credits", creditRoutes);

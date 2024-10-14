@@ -10,7 +10,6 @@ const userSchema = new mongoose.Schema({
   },
   company: {
     type: String,
-    required: true,
   },
   firstName: {
     type: String,
@@ -22,16 +21,17 @@ const userSchema = new mongoose.Schema({
   },
   mobile: {
     type: String,
-    required: true,
   },
   password: {
     type: String,
-    required: true,
     minlength: 8,
   },
   countryCode: {
     type: String,
     default: "+1", // Default country code
+  },
+  googleId: {
+    type: String,
   },
   credits: {
     emailCredits: {

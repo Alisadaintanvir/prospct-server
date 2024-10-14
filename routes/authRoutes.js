@@ -8,5 +8,6 @@ router.post("/register", authController.registration);
 router.post("/login", authController.login);
 router.post("/verify-token", authController.verifyToken);
 router.post("/logout", authController.logout);
+router.post("/google-auth", authController.googleAuth);
 
 module.exports = router;

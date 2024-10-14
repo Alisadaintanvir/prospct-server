@@ -1,5 +1,11 @@
 const axios = require("axios");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const CoinPayments = require("coinpayments");
+
+const coinPayments = new CoinPayments({
+  key: process.env.COINPAYMENTS_PUBLIC_KEY, // Replace with your CoinPayments public key
+  secret: process.env.COINPAYMENTS_PRIVATE_KEY, // Replace with your CoinPayments private key
+});
 
 const paymentController = {
   createStripePaymentIntent: async (req, res) => {
@@ -61,6 +67,40 @@ const paymentController = {
 
   fastSpringWebhook: async (req, res) => {
     const bodyData = req.body;
+  },
+
+  //CoinPayments
+  createCoinPaymentsPayment: async (req, res) => {
+    const { amount, currency, email, item_name } = req.body;
+    console.log(req.body);
+
+    try {
+      const payment = await coinPayments.createTransaction({
+        amount,
+        currency: "USD",
+        currency2: "BTC",
+        buyer_email: email,
+        item_name: item_name,
+        ipn_url: "https://server.prospct.io/app/payment/coinpayments/ipn",
+      });
+
+      res.json(payment);
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ error: "Error creating CoinPayments payment" });
+    }
+  },
+
+  coinpaymentsIPN: async (req, res) => {
+    const sig = req.headers["x-coinpayments-signature"];
+    const bodyData = req.body;
+
+    // Validate the IPN message (you'll need to implement your own verification)
+    // This is just a simple log for demonstration
+    console.log("CoinPayments IPN:", bodyData);
+
+    // Respond to acknowledge receipt
+    res.json({ received: true });
   },
 };
 
