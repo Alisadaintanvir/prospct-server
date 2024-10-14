@@ -91,6 +91,37 @@ const paymentController = {
     }
   },
 
+  stripeCreateCheckoutSession: async (req, res) => {
+    const { items } = req.body; // Expecting items in the request body
+
+    // Create an array of line items for Stripe Checkout
+    const line_items = items.map((item) => ({
+      price_data: {
+        currency: "usd",
+        product_data: {
+          name: item.name,
+        },
+        unit_amount: item.price * 100, // Convert dollars to cents
+      },
+      quantity: item.quantity || 1,
+    }));
+
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card"],
+        line_items,
+        mode: "payment",
+        success_url: "http://localhost:5173/dashboard", // Redirect to success page
+        cancel_url: "http://localhost:5173/plans-and-billings", // Redirect to cancel page
+      });
+
+      res.json({ id: session.id });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ error: "Payment processing error" });
+    }
+  },
+
   coinpaymentsIPN: async (req, res) => {
     const sig = req.headers["x-coinpayments-signature"];
     const bodyData = req.body;
