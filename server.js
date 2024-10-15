@@ -21,6 +21,7 @@ const PORT = process.env.PORT || 5000;
 
 connectDB();
 
+app.use("/payment/stripe/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
 
 const server = http.createServer(app);

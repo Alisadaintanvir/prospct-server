@@ -40,6 +40,7 @@ const paymentController = {
   stripeWebhook: async (req, res) => {
     const sig = req.headers["stripe-signature"];
     let event;
+    console.log("stripe event invoked");
 
     try {
       event = stripe.webhooks.constructEvent(
@@ -47,22 +48,29 @@ const paymentController = {
         sig,
         process.env.STRIPE_WEBHOOK_SECRET
       );
+      console.log("Webhook received:", event);
+
+      switch (event.type) {
+        case "payment_intent.succeeded":
+          const paymentIntent = event.data.object;
+          console.log("PaymentIntent was successful!");
+          break;
+
+        case "checkout.session.completed":
+          const session = event.data.object;
+          console.log("Payment succeeded:", session);
+          // Handle post-payment fulfillment here
+          break;
+
+        default:
+          console.log(`Unhandled event type ${event.type}`);
+      }
+      // Acknowledge receipt of the event
+      res.status(200).send({ received: true });
     } catch (err) {
       console.log(err);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
-
-    switch (event.type) {
-      case "payment_intent.succeeded":
-        const paymentIntent = event.data.object;
-        console.log("PaymentIntent was successful!");
-        break;
-
-      default:
-        console.log(`Unhandled event type ${event.type}`);
-    }
-
-    res.json({ received: true });
   },
 
   fastSpringWebhook: async (req, res) => {

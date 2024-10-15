@@ -15,13 +15,13 @@ router.post(
 );
 
 router.post(
-  "/webhook/stripe",
+  "/stripe/webhook",
   express.raw({ type: "application/json" }),
   paymentController.stripeWebhook
 );
 
 router.post(
-  "/webhook/fastspring",
+  "/fastspring/webhook",
   authMiddleware,
   paymentController.fastSpringWebhook
 );
