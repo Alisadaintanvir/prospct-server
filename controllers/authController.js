@@ -259,7 +259,84 @@ const authController = {
 
   telegramCallback: async (req, res) => {
     const { id, first_name, username, photo_url, auth_date, hash } = req.query;
-    console.log(req.query);
+
+    // Step 1: Verify the hash
+    const token = process.env.TELEGRAM_BOT_TOKEN; // Your bot token
+    const data = `${id}\n${first_name}\n${auth_date}\n${token}`;
+    const secret = crypto.createHash("sha256").update(token).digest();
+
+    const hashCheck = crypto
+      .createHmac("sha256", secret)
+      .update(data)
+      .digest("base64");
+
+    if (hash !== hashCheck) {
+      return res.status(403).json({ message: "Invalid hash" });
+    }
+
+    try {
+      // Step 2: Create or update user
+      let user = await User.findOne({ telegramId: id });
+
+      if (!user) {
+        // Create new user if it doesn't exist
+        user = new User({
+          firstName: first_name,
+          username,
+          telegramId: id,
+          profilePicture: photo_url,
+          // Set default values for credits and plan as needed
+          credits: {
+            emailCredits: {
+              current: freePlan.features.emailCredits.max,
+              max: freePlan.features.emailCredits.max,
+            },
+            phoneCredits: {
+              current: freePlan.features.phoneCredits.max,
+              max: freePlan.features.phoneCredits.max,
+            },
+            verificationCredits: {
+              current: freePlan.features.verificationCredits.max,
+              max: freePlan.features.verificationCredits.max,
+            },
+            plan: freePlan._id,
+          },
+          // You can assign a default plan if needed
+        });
+        await user.save();
+      } else {
+        // Update existing user if necessary
+        user.firstName = first_name;
+        user.username = username;
+        user.profilePicture = photo_url;
+        await user.save();
+      }
+
+      // Step 3: Generate JWT token
+      const jwtToken = jwt.sign(
+        { userId: user._id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "3h" }
+      );
+
+      // Send response with the token
+      res.status(200).json({
+        message: "Telegram authentication successful",
+        accessToken: jwtToken,
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          username: user.username,
+          profilePicture: user.profilePicture,
+          role: user.role,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+      res
+        .status(500)
+        .json({ error: "Something went wrong during Telegram authentication" });
+    }
   },
 };
 

@@ -33,6 +33,9 @@ const userSchema = new mongoose.Schema({
   googleId: {
     type: String,
   },
+  telegramId: {
+    type: String,
+  },
   credits: {
     emailCredits: {
       current: {
