@@ -7,6 +7,8 @@ const coinPayments = new CoinPayments({
   secret: process.env.COINPAYMENTS_PRIVATE_KEY, // Replace with your CoinPayments private key
 });
 
+const cryptomusURI = "https://api.cryptomus.com/v1";
+
 const paymentController = {
   createStripePaymentIntent: async (req, res) => {
     const bodyItems = req.body;
@@ -140,6 +142,23 @@ const paymentController = {
 
     // Respond to acknowledge receipt
     res.json({ received: true });
+  },
+
+  cryptomousCheckout: async (req, res) => {
+    try {
+      const { product } = req.body;
+      // create a new order
+      //create a new payment intent
+      const payload = {
+        amount: product.price,
+        currency: "usd",
+        order_id: "12345",
+        url_callback: "app.prospct.io",
+      };
+
+      const { data } = axios.post(`${cryptomusURI}/payment`, payload);
+      console.log(data);
+    } catch (error) {}
   },
 };
 

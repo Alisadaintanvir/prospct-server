@@ -7,4 +7,7 @@ const router = express.Router();
 router.post("/", authMiddleware, searchController.search);
 router.post("/ids", authMiddleware, searchController.getItemDetailsByIds);
 
+//Enrich functionality
+router.get("/enrich/findleads", authMiddleware, searchController.findLeads);
+
 module.exports = router;

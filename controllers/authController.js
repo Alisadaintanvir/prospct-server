@@ -6,6 +6,7 @@ const Plan = require("../models/Plans");
 const { OAuth2Client } = require("google-auth-library");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const TELEGRAM_BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME;
 
 const authController = {
   registration: async (req, res) => {
@@ -247,6 +248,18 @@ const authController = {
         .status(500)
         .json({ error: "Something went wrong during Google authentication" });
     }
+  },
+
+  telegramAuth: async (req, res) => {
+    const callbackURL =
+      "https://783e-103-69-150-70.ngrok-free.app/api/auth/telegram/callback"; // Use your production URL in the future
+    const authUrl = `https://telegram.me/${TELEGRAM_BOT_USERNAME}?start=auth`;
+    res.redirect(authUrl);
+  },
+
+  telegramCallback: async (req, res) => {
+    const { id, first_name, username, photo_url, auth_date, hash } = req.query;
+    console.log(req.query);
   },
 };
 

@@ -23,6 +23,7 @@ connectDB();
 
 app.use("/payment/stripe/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
+app.use(express.static("public"));
 
 const server = http.createServer(app);
 // Initialize Socket.IO with the server instance

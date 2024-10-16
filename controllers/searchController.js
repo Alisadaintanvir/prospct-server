@@ -299,6 +299,45 @@ const searchController = {
       res.status(500).json({ error: "Something went wrong" });
     }
   },
+
+  findLeads: async (req, res) => {
+    try {
+      const { name, domain } = req.query;
+      console.log(req.query);
+
+      // Initialize an empty query object
+      const query = {};
+
+      // Add conditions based on the presence of 'name' and 'domain'
+      if (name || domain) {
+        query.$and = []; // Create an $and array to hold conditions
+
+        // Condition for name if provided
+        if (name) {
+          query.$and.push({
+            "_source.person_name": { $regex: new RegExp(name, "i") }, // Case-insensitive regex search
+          });
+        }
+
+        // Condition for domain if provided
+        if (domain) {
+          query.$and.push({
+            "_source.organization_domain": { $regex: new RegExp(domain, "i") }, // Case-insensitive regex search
+          });
+        }
+      }
+
+      // Execute the query only if there's at least one condition
+      const results =
+        query.$and.length > 0 ? await Contacts_V5.find(query).exec() : [];
+
+      // Return the results
+      res.status(200).json({ results });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Something went wrong" });
+    }
+  },
 };
 
 module.exports = searchController;
