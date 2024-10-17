@@ -259,34 +259,57 @@ const authController = {
   },
 
   telegramCallback: async (req, res) => {
-    const { id, first_name, username, photo_url, auth_date, hash } = req.query;
+    const { hash, ...data } = req.body;
+    const secret = process.env.TELEGRAM_BOT_TOKEN;
+    const telegramId = req.body.id;
 
-    // Step 1: Verify the hash
-    const token = process.env.TELEGRAM_BOT_TOKEN; // Your bot token
-    const data = `${id}\n${first_name}\n${auth_date}\n${token}`;
-    const secret = crypto.createHash("sha256").update(token).digest();
+    // Sort data and create the data check string
+    const dataCheckArr = Object.keys(data).map((key) => `${key}=${data[key]}`);
+    dataCheckArr.sort();
+    const dataCheckString = dataCheckArr.join("\n");
 
+    // Create the hash
+    const secretKey = crypto
+      .createHash("sha256")
+      .update(secret, "utf8")
+      .digest();
     const hashCheck = crypto
-      .createHmac("sha256", secret)
-      .update(data)
-      .digest("base64");
+      .createHmac("sha256", secretKey)
+      .update(dataCheckString)
+      .digest("hex");
 
+    // Verify hash
     if (hash !== hashCheck) {
+      console.log("Invalid hash");
       return res.status(403).json({ message: "Invalid hash" });
+    }
+
+    // Check if the auth data is outdated
+    if (Date.now() / 1000 - data.auth_date > 86400) {
+      return res.status(403).json({ message: "Auth data is outdated" });
     }
 
     try {
       // Step 2: Create or update user
-      let user = await User.findOne({ telegramId: id });
+      let user = await User.findOne({ telegramId: telegramId });
 
       if (!user) {
+        // If the user doesn't exist, create a new one
+        let freePlan = await Plan.findOne({ name: "Free" });
+
+        if (!freePlan) {
+          freePlan = new Plan({});
+          await freePlan.save();
+        }
+
         // Create new user if it doesn't exist
         user = new User({
-          firstName: first_name,
-          username,
-          telegramId: id,
-          profilePicture: photo_url,
-          // Set default values for credits and plan as needed
+          firstName: req.body.first_name,
+          lastName: req.body.last_name,
+          username: req.body.username,
+          telegramId: telegramId,
+          profilePicture: req.body.photo_url,
+          plan: freePlan._id,
           credits: {
             emailCredits: {
               current: freePlan.features.emailCredits.max,
@@ -300,16 +323,14 @@ const authController = {
               current: freePlan.features.verificationCredits.max,
               max: freePlan.features.verificationCredits.max,
             },
-            plan: freePlan._id,
           },
-          // You can assign a default plan if needed
         });
         await user.save();
       } else {
         // Update existing user if necessary
-        user.firstName = first_name;
-        user.username = username;
-        user.profilePicture = photo_url;
+        user.firstName = req.body.first_name;
+        user.username = req.body.username;
+        user.profilePicture = req.body.photo_url;
         await user.save();
       }
 
@@ -338,6 +359,11 @@ const authController = {
         .status(500)
         .json({ error: "Something went wrong during Telegram authentication" });
     }
+  },
+
+  linkedinAuth: async (req, res) => {
+    console.log("linkedin auth provoked");
+    console.log(req.query);
   },
 };
 

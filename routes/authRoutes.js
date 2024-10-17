@@ -10,6 +10,7 @@ router.post("/verify-token", authController.verifyToken);
 router.post("/logout", authController.logout);
 router.post("/google-auth", authController.googleAuth);
 router.get("/telegram", authController.telegramAuth);
-router.get("/telegram/callback", authController.telegramCallback);
+router.post("/telegram/callback", authController.telegramCallback);
+router.get("/linkedin", authController.linkedinAuth);
 
 module.exports = router;
