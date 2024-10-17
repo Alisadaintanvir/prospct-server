@@ -31,7 +31,11 @@ initSocket(server);
 
 // Configure CORS properly
 const corsOptions = {
-  origin: ["https://app.prospct.io", "http://localhost:5173"],
+  origin: [
+    "https://app.prospct.io",
+    "http://localhost:5173",
+    "https://3b5f-103-187-68-228.ngrok-free.app/",
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
