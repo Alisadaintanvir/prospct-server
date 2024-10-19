@@ -5,6 +5,7 @@ const crypto = require("crypto");
 const User = require("../models/User");
 const Plan = require("../models/Plans");
 const { OAuth2Client } = require("google-auth-library");
+const axios = require("axios");
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const TELEGRAM_BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME;
@@ -362,8 +363,129 @@ const authController = {
   },
 
   linkedinAuth: async (req, res) => {
-    console.log("linkedin auth provoked");
-    console.log(req.query);
+    try {
+      console.log("LinkedIn auth provoked");
+      const { code } = req.query;
+
+      console.log("code", code);
+
+      if (!code) {
+        return res
+          .status(400)
+          .send({ message: "Authorization code not provided" });
+      }
+
+      // Exchange authorization code for an access token
+      const tokenResponse = await axios.post(
+        "https://www.linkedin.com/oauth/v2/accessToken",
+        null,
+        {
+          params: {
+            grant_type: "authorization_code",
+            code,
+            redirect_uri: "http://localhost:5000/api/auth/linkedin",
+            client_id: process.env.LINKEDIN_CLIENT_ID,
+            client_secret: process.env.LINKEDIN_CLIENT_SECRET,
+          },
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      console.log("tokenResponse", tokenResponse.data);
+
+      const { access_token } = tokenResponse.data;
+
+      console.log("access_token", access_token);
+
+      // Use access token to get user information
+      const userInfoResponse = await axios.get(
+        "https://api.linkedin.com/v2/userinfo",
+        {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        }
+      );
+
+      const { name, email, given_name, family_name, picture, sub } =
+        userInfoResponse.data;
+
+      // Check if user already exists in your database
+      let user = await User.findOne({ email });
+
+      if (!user) {
+        // If user doesn't exist, create a new one
+        let freePlan = await Plan.findOne({ name: "Free" });
+
+        if (!freePlan) {
+          freePlan = new Plan({});
+          await freePlan.save();
+        }
+
+        user = new User({
+          email,
+          firstName: given_name,
+          lastName: family_name,
+          profilePicture: picture,
+          linkedinId, // Save the LinkedIn ID
+          plan: freePlan._id,
+          credits: {
+            emailCredits: {
+              current: freePlan.features.emailCredits.max,
+              max: freePlan.features.emailCredits.max,
+            },
+            phoneCredits: {
+              current: freePlan.features.phoneCredits.max,
+              max: freePlan.features.phoneCredits.max,
+            },
+            verificationCredits: {
+              current: freePlan.features.verificationCredits.max,
+              max: freePlan.features.verificationCredits.max,
+            },
+          },
+        });
+
+        await user.save();
+      } else if (!user.linkedInId) {
+        // If the user exists but doesn't have a LinkedIn ID, update it
+        user.linkedInId = sub;
+        await user.save();
+      }
+
+      // Generate JWT token
+      const jwtToken = jwt.sign(
+        { userId: user._id, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "3h" }
+      );
+
+      // Update user token
+      user.token = jwtToken;
+      await user.save();
+
+      // Send response
+      res.status(200).json({
+        message: "LinkedIn authentication successful",
+        accessToken: jwtToken,
+        user: {
+          id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+        },
+      });
+    } catch (error) {
+      console.error(
+        "Error during LinkedIn auth:",
+        error.response?.data || error.message
+      );
+      res
+        .status(500)
+        .json({ message: "LinkedIn login failed", error: error.message });
+    }
   },
 };
 
