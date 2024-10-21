@@ -362,12 +362,17 @@ const authController = {
     }
   },
 
+  linkedinLogin: (req, res) => {
+    const redirectUri = encodeURIComponent(
+      "http://localhost:5000/api/auth/linkedin"
+    );
+    const linkedinAuthUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${process.env.LINKEDIN_CLIENT_ID}&redirect_uri=${redirectUri}&scope=openid%20profile%20email`;
+    res.redirect(linkedinAuthUrl);
+  },
+
   linkedinAuth: async (req, res) => {
     try {
-      console.log("LinkedIn auth provoked");
       const { code } = req.query;
-
-      console.log("code", code);
 
       if (!code) {
         return res
@@ -393,11 +398,7 @@ const authController = {
         }
       );
 
-      console.log("tokenResponse", tokenResponse.data);
-
       const { access_token } = tokenResponse.data;
-
-      console.log("access_token", access_token);
 
       // Use access token to get user information
       const userInfoResponse = await axios.get(
@@ -429,7 +430,7 @@ const authController = {
           firstName: given_name,
           lastName: family_name,
           profilePicture: picture,
-          linkedinId, // Save the LinkedIn ID
+          linkedInId: sub, // Save the LinkedIn ID
           plan: freePlan._id,
           credits: {
             emailCredits: {
@@ -466,17 +467,21 @@ const authController = {
       await user.save();
 
       // Send response
-      res.status(200).json({
-        message: "LinkedIn authentication successful",
-        accessToken: jwtToken,
-        user: {
-          id: user._id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-        },
-      });
+      // res.status(200).json({
+      //   message: "LinkedIn authentication successful",
+      //   accessToken: jwtToken,
+      //   user: {
+      //     id: user._id,
+      //     email: user.email,
+      //     firstName: user.firstName,
+      //     lastName: user.lastName,
+      //     role: user.role,
+      //   },
+      // });
+
+      res.redirect(
+        `http://app.prospct.io/linkedin-auth-success?token=${jwtToken}&userId=${user._id}&email=${user.email}&firstName=${user.firstName}&lastName=${user.lastName}&role=${user.role}`
+      );
     } catch (error) {
       console.error(
         "Error during LinkedIn auth:",

@@ -12,5 +12,5 @@ router.post("/google-auth", authController.googleAuth);
 router.get("/telegram", authController.telegramAuth);
 router.post("/telegram/callback", authController.telegramCallback);
 router.get("/linkedin", authController.linkedinAuth);
-
+router.get("/linkedin/login", authController.linkedinLogin);
 module.exports = router;
