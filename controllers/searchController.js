@@ -192,6 +192,47 @@ const searchController = {
         conditions.push({ $or: regexConditions });
       }
 
+      // Founded Year Filter
+      const handleFoundedYearRange = (minYear, maxYear) => {
+        const yearConditions = [];
+
+        // If both minYear and maxYear are provided
+        if (minYear && maxYear) {
+          yearConditions.push({
+            "_source.organization_founded_year": {
+              $gte: Number(minYear),
+              $lte: Number(maxYear),
+            },
+          });
+        }
+        // If only minYear is provided
+        else if (minYear) {
+          yearConditions.push({
+            "_source.organization_founded_year": { $gte: Number(minYear) },
+          });
+        }
+        // If only maxYear is provided
+        else if (maxYear) {
+          yearConditions.push({
+            "_source.organization_founded_year": { $lte: Number(maxYear) },
+          });
+        }
+
+        return yearConditions;
+      };
+
+      // Now, apply the founded year filter
+      const { minYear, maxYear } = filters.foundedYear || {};
+
+      // Only apply the conditions if minYear or maxYear is present
+      if (minYear || maxYear) {
+        const yearConditions = handleFoundedYearRange(minYear, maxYear);
+
+        if (yearConditions.length > 0) {
+          conditions.push({ $or: yearConditions });
+        }
+      }
+
       // Email Type Exclusion Filter
       if (
         Array.isArray(excludedFilters.emailType) &&
@@ -205,7 +246,7 @@ const searchController = {
         exclusionConditions.push({ $and: emailTypeExclusions });
       }
 
-      // List Filter - Include
+      // List Filter
       const [includeListIds, excludeListIds] = await Promise.all([
         List.find({ userId, name: { $in: filters.list } }).select("_id"),
         List.find({ userId, name: { $in: excludedFilters.list } }).select(
