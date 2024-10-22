@@ -466,19 +466,6 @@ const authController = {
       user.token = jwtToken;
       await user.save();
 
-      // Send response
-      // res.status(200).json({
-      //   message: "LinkedIn authentication successful",
-      //   accessToken: jwtToken,
-      //   user: {
-      //     id: user._id,
-      //     email: user.email,
-      //     firstName: user.firstName,
-      //     lastName: user.lastName,
-      //     role: user.role,
-      //   },
-      // });
-
       res.redirect(
         `http://app.prospct.io/linkedin-auth-success?token=${jwtToken}&userId=${user._id}&email=${user.email}&firstName=${user.firstName}&lastName=${user.lastName}&role=${user.role}`
       );
