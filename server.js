@@ -3,6 +3,7 @@ const cors = require("cors");
 const path = require("path");
 const { initSocket } = require("./utils/socket");
 const http = require("http");
+const bodyParser = require("body-parser");
 
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
@@ -23,6 +24,7 @@ connectDB();
 
 app.use("/payment/stripe/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 const server = http.createServer(app);

@@ -30,4 +30,6 @@ router.post("/coinpayments", paymentController.createCoinPaymentsPayment);
 
 router.post("/coinpayments/ipn", paymentController.coinpaymentsIPN);
 
+router.post("/payproglobal/ipn", paymentController.PayProGlobalIPN);
+
 module.exports = router;

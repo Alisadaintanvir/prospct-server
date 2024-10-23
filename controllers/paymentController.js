@@ -160,6 +160,10 @@ const paymentController = {
       console.log(data);
     } catch (error) {}
   },
+
+  PayProGlobalIPN: async (req, res) => {
+    console.log(req.body);
+  },
 };
 
 module.exports = paymentController;
