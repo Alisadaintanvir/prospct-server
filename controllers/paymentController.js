@@ -1,6 +1,7 @@
 const axios = require("axios");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const CoinPayments = require("coinpayments");
+const crypto = require("crypto");
 
 const coinPayments = new CoinPayments({
   key: process.env.COINPAYMENTS_PUBLIC_KEY, // Replace with your CoinPayments public key
@@ -161,9 +162,63 @@ const paymentController = {
     } catch (error) {}
   },
 
+  payProGlobalCheckout: async (req, res) => {
+    const productsData = req.body;
+    const key = process.env.PAYPROGLOBAL_ENCRYPTION_KEY;
+    const iv = process.env.PAYPROGLOBAL_IV;
+    const dynamicProductId = 100072;
+
+    try {
+      let dynamicProductUrl = `https://store.payproglobal.com/checkout?currency=USD`;
+
+      // Loop through each product and encrypt its data
+      productsData.forEach((product, index) => {
+        const encryptedData = encryptData(product, key, iv);
+        dynamicProductUrl += `&products[${
+          index + 1
+        }][id]=${dynamicProductId}&products[${
+          index + 1
+        }][data]=${encryptedData}`;
+      });
+
+      console.log(dynamicProductUrl);
+      res.json({ url: dynamicProductUrl });
+    } catch (error) {
+      console.log(error);
+    }
+  },
+
   PayProGlobalIPN: async (req, res) => {
     console.log(req.body);
   },
 };
 
 module.exports = paymentController;
+
+// Function to encrypt data
+function encryptData(data, key, iv) {
+  // Initialize cipher
+  const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+
+  // Convert data to query string
+  const queryString = new URLSearchParams(data).toString();
+
+  // Encrypt the query string
+  let encrypted = cipher.update(queryString, "utf8", "base64");
+  encrypted += cipher.final("base64");
+
+  // URL encode the encrypted data
+  return encodeURIComponent(encrypted);
+}
+
+// Function to decrypt using AES-256
+function decrypt(encryptedText, key, iv) {
+  const decipher = crypto.createDecipheriv(
+    "aes-256-cbc",
+    Buffer.from(key),
+    Buffer.from(iv)
+  );
+  let decrypted = decipher.update(encryptedText, "base64", "utf8");
+  decrypted += decipher.final("utf8");
+  return decrypted;
+}
