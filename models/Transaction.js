@@ -1,5 +1,40 @@
 const mongoose = require("mongoose");
 
+const transactionItemSchema = new mongoose.Schema({
+  itemType: {
+    type: String,
+    enum: ["plan", "credit"],
+    required: true,
+  },
+  plan: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Plan",
+    required: function () {
+      if (this.itemType === "plan") {
+        return true;
+      }
+    },
+  },
+  credit: {
+    quantity: {
+      type: Number,
+      required: function () {
+        if (this.itemType === "credit") {
+          return true;
+        }
+      },
+    },
+    packagePrice: {
+      type: Number,
+      required: function () {
+        if (this.itemType === "credit") {
+          return true;
+        }
+      },
+    },
+  },
+});
+
 const transactionSchema = new mongoose.Schema(
   {
     userId: {
@@ -9,7 +44,7 @@ const transactionSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ["PLAN_UPGRADE", "CREDIT_PURCHASE"],
+      enum: ["PLAN_UPGRADE", "CREDIT_PURCHASE", "PLAN & CREDIT PURCHASE"],
       required: true,
     },
     status: {
@@ -17,20 +52,27 @@ const transactionSchema = new mongoose.Schema(
       enum: ["PENDING", "COMPLETED", "FAILED", "REFUNDED"],
       default: "PENDING",
     },
-    amount: {
+    totalAmount: {
       type: Number,
       required: true,
     },
-    credits: {
-      type: Number,
-      default: 0,
-    },
-    planDetails: {
-      planId: String,
-      planName: String,
-      validFrom: Date,
-      validTo: Date,
-    },
+    items: [
+      {
+        name: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Plan",
+      },
+      {
+        name: String,
+        amount: {
+          type: Number,
+        },
+        quantity: {
+          type: Number,
+        },
+      },
+    ],
+
     paymentGateway: {
       name: String, // e.g., 'stripe', 'paypal'
       transactionId: String,
@@ -42,3 +84,5 @@ const transactionSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+module.exports = mongoose.model("Transaction", transactionSchema);

@@ -98,15 +98,33 @@ const paymentController = {
 
   // PayProGlobal payment gateway
   payProGlobalCheckout: async (req, res) => {
-    const productsData = req.body;
+    const { productData, totalAmount } = req.body;
     const dynamicProductId = 100072;
     const key = process.env.PAYPROGLOBAL_ENCRYPTION_KEY;
     const iv = process.env.PAYPROGLOBAL_IV;
     const baseUrl = "https://store.payproglobal.com/checkout?";
+    const userId = req.user.userId;
+
+    console.log(productData);
 
     try {
+      // Step 1: Create a pending transaction record
+      const transaction = await transactionService.createTransaction({
+        userId,
+        type: "PLAN_UPGRADE",
+        amount: totalAmount,
+        paymentGateway: "PayProGlobal",
+        status: "PENDING",
+      });
+
+      // Step 2: Generate the PayProGlobal dynamic URL
+      const formattedProductsData = productData.map((product) => ({
+        Name: product.Name,
+        "Price[USD][amount]": product.Price,
+      }));
+
       const dynamicProductUrl = payProGlobalService.createDynamicProductUrl(
-        productsData,
+        formattedProductsData,
         key,
         iv,
         baseUrl,
