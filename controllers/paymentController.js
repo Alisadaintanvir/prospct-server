@@ -1,78 +1,34 @@
 const axios = require("axios");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const CoinPayments = require("coinpayments");
-const crypto = require("crypto");
-
-const coinPayments = new CoinPayments({
-  key: process.env.COINPAYMENTS_PUBLIC_KEY, // Replace with your CoinPayments public key
-  secret: process.env.COINPAYMENTS_PRIVATE_KEY, // Replace with your CoinPayments private key
-});
-
+const stripeService = require("../services/stripeService");
+const payProGlobalService = require("../services/payProGlobalService");
+const coinPaymentService = require("../services/coinPaymentService");
+const perfectMoneyService = require("../services/perfectMoneyService");
+const transactionService = require("../services/transactionService");
 const cryptomusURI = "https://api.cryptomus.com/v1";
 
 const paymentController = {
-  createStripePaymentIntent: async (req, res) => {
-    const bodyItems = req.body;
-    console.log(bodyItems);
-    try {
-      const lineItems = bodyItems.items.map((item) => ({
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: item.name,
-          },
-          unit_amount: item.price, // Convert dollars to cents
-        },
-        quantity: 1,
-      }));
+  // Stripe payment gateway functions
+  stripeCreateCheckoutSession: async (req, res) => {
+    const { items } = req.body; // Expecting items in the request body
 
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items: lineItems,
-        mode: "payment",
-        success_url: "https://app.prospct.io",
-        cancel_url: "https://app.prospct.io",
-      });
+    try {
+      const session = await stripeService.createCheckoutSession(items);
       res.json({ id: session.id });
-    } catch (err) {
-      console.log(err);
-      res.status(500).json({ error: err.message });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({ error: "Payment processing error" });
     }
   },
 
   stripeWebhook: async (req, res) => {
-    const sig = req.headers["stripe-signature"];
-    let event;
-    console.log("stripe event invoked");
-
     try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        sig,
-        process.env.STRIPE_WEBHOOK_SECRET
+      const event = await stripeService.handleWebhook(
+        req.headers["stripe-signature"],
+        req.body
       );
-      console.log("Webhook received:", event);
-
-      switch (event.type) {
-        case "payment_intent.succeeded":
-          const paymentIntent = event.data.object;
-          console.log("PaymentIntent was successful!");
-          break;
-
-        case "checkout.session.completed":
-          const session = event.data.object;
-          console.log("Payment succeeded:", session);
-          // Handle post-payment fulfillment here
-          break;
-
-        default:
-          console.log(`Unhandled event type ${event.type}`);
-      }
-      // Acknowledge receipt of the event
       res.status(200).send({ received: true });
-    } catch (err) {
-      console.log(err);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+    } catch (error) {
+      res.status(400).send({ error: `Webhook Error: ${error.message}` });
     }
   },
 
@@ -83,53 +39,18 @@ const paymentController = {
   //CoinPayments
   createCoinPaymentsPayment: async (req, res) => {
     const { amount, currency, email, item_name } = req.body;
-    console.log(req.body);
 
     try {
-      const payment = await coinPayments.createTransaction({
+      const payment = await coinPaymentService.createCoinPayment({
         amount,
-        currency: "USD",
-        currency2: "BTC",
-        buyer_email: email,
-        item_name: item_name,
-        ipn_url: "https://server.prospct.io/app/payment/coinpayments/ipn",
+        currency,
+        email,
+        item_name,
       });
-
       res.json(payment);
     } catch (err) {
       console.log(err);
       res.status(500).json({ error: "Error creating CoinPayments payment" });
-    }
-  },
-
-  stripeCreateCheckoutSession: async (req, res) => {
-    const { items } = req.body; // Expecting items in the request body
-
-    // Create an array of line items for Stripe Checkout
-    const line_items = items.map((item) => ({
-      price_data: {
-        currency: "usd",
-        product_data: {
-          name: item.name,
-        },
-        unit_amount: item.price * 100, // Convert dollars to cents
-      },
-      quantity: item.quantity || 1,
-    }));
-
-    try {
-      const session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        line_items,
-        mode: "payment",
-        success_url: "http://localhost:5173/dashboard", // Redirect to success page
-        cancel_url: "http://localhost:5173/plans-and-billings", // Redirect to cancel page
-      });
-
-      res.json({ id: session.id });
-    } catch (error) {
-      console.error(error);
-      res.status(500).send({ error: "Payment processing error" });
     }
   },
 
@@ -145,6 +66,7 @@ const paymentController = {
     res.json({ received: true });
   },
 
+  // Cryptomus payment gateway
   cryptomousCheckout: async (req, res) => {
     try {
       const { product } = req.body;
@@ -162,26 +84,34 @@ const paymentController = {
     } catch (error) {}
   },
 
+  // PerfectMoney payment gateway
+  perfectMoneyCheckout: async (req, res) => {
+    const { amount, paymentId } = req.body;
+    const formHTML = perfectMoneyService.generatePerfectMoneyForm({
+      amount,
+      paymentId,
+    });
+
+    // Send the generated form HTML as a response
+    res.send(formHTML);
+  },
+
+  // PayProGlobal payment gateway
   payProGlobalCheckout: async (req, res) => {
     const productsData = req.body;
+    const dynamicProductId = 100072;
     const key = process.env.PAYPROGLOBAL_ENCRYPTION_KEY;
     const iv = process.env.PAYPROGLOBAL_IV;
-    const dynamicProductId = 100072;
+    const baseUrl = "https://store.payproglobal.com/checkout?";
 
     try {
-      let dynamicProductUrl = `https://store.payproglobal.com/checkout?currency=USD`;
-
-      // Loop through each product and encrypt its data
-      productsData.forEach((product, index) => {
-        const encryptedData = encryptData(product, key, iv);
-        dynamicProductUrl += `&products[${
-          index + 1
-        }][id]=${dynamicProductId}&products[${
-          index + 1
-        }][data]=${encryptedData}`;
-      });
-
-      console.log(dynamicProductUrl);
+      const dynamicProductUrl = payProGlobalService.createDynamicProductUrl(
+        productsData,
+        key,
+        iv,
+        baseUrl,
+        dynamicProductId
+      );
       res.json({ url: dynamicProductUrl });
     } catch (error) {
       console.log(error);
@@ -194,31 +124,3 @@ const paymentController = {
 };
 
 module.exports = paymentController;
-
-// Function to encrypt data
-function encryptData(data, key, iv) {
-  // Initialize cipher
-  const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
-
-  // Convert data to query string
-  const queryString = new URLSearchParams(data).toString();
-
-  // Encrypt the query string
-  let encrypted = cipher.update(queryString, "utf8", "base64");
-  encrypted += cipher.final("base64");
-
-  // URL encode the encrypted data
-  return encodeURIComponent(encrypted);
-}
-
-// Function to decrypt using AES-256
-function decrypt(encryptedText, key, iv) {
-  const decipher = crypto.createDecipheriv(
-    "aes-256-cbc",
-    Buffer.from(key),
-    Buffer.from(iv)
-  );
-  let decrypted = decipher.update(encryptedText, "base64", "utf8");
-  decrypted += decipher.final("utf8");
-  return decrypted;
-}

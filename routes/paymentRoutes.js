@@ -4,10 +4,10 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post(
-  "/stripe/create-payment-intent",
-  paymentController.createStripePaymentIntent
-);
+// router.post(
+//   "/stripe/create-payment-intent",
+//   paymentController.createStripePaymentIntent
+// );
 
 router.post(
   "/stripe/create-checkout-session",
@@ -30,7 +30,17 @@ router.post("/coinpayments", paymentController.createCoinPaymentsPayment);
 
 router.post("/coinpayments/ipn", paymentController.coinpaymentsIPN);
 
-router.post("/payproglobal/checkout", paymentController.payProGlobalCheckout);
+router.post(
+  "/perfectmoney/checkout",
+  authMiddleware,
+  paymentController.perfectMoneyCheckout
+);
+
+router.post(
+  "/payproglobal/checkout",
+  authMiddleware,
+  paymentController.payProGlobalCheckout
+);
 router.post("/payproglobal/ipn", paymentController.PayProGlobalIPN);
 
 module.exports = router;
