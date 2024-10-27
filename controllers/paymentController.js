@@ -9,7 +9,13 @@ const cryptomusURI = "https://api.cryptomus.com/v1";
 const paymentController = {
   // Stripe payment gateway functions
   stripeCreateCheckoutSession: async (req, res) => {
-    const { items } = req.body; // Expecting items in the request body
+    const productData = req.body; // Expecting items in the request body
+
+    const items = productData.map((item) => ({
+      name: item.name,
+      price: item.price,
+      quantity: 1,
+    }));
 
     try {
       const session = await stripeService.createCheckoutSession(items);
@@ -98,29 +104,27 @@ const paymentController = {
 
   // PayProGlobal payment gateway
   payProGlobalCheckout: async (req, res) => {
-    const { productData, totalAmount } = req.body;
+    const { productData, totalAmount, paymentGateway } = req.body;
     const dynamicProductId = 100072;
     const key = process.env.PAYPROGLOBAL_ENCRYPTION_KEY;
     const iv = process.env.PAYPROGLOBAL_IV;
     const baseUrl = "https://store.payproglobal.com/checkout?";
     const userId = req.user.userId;
 
-    console.log(productData);
-
     try {
       // Step 1: Create a pending transaction record
       const transaction = await transactionService.createTransaction({
         userId,
-        type: "PLAN_UPGRADE",
-        amount: totalAmount,
-        paymentGateway: "PayProGlobal",
+        totalAmount,
+        paymentGateway: paymentGateway,
         status: "PENDING",
+        items: productData,
       });
 
       // Step 2: Generate the PayProGlobal dynamic URL
       const formattedProductsData = productData.map((product) => ({
-        Name: product.Name,
-        "Price[USD][amount]": product.Price,
+        Name: product.name,
+        "Price[USD][amount]": product.price,
       }));
 
       const dynamicProductUrl = payProGlobalService.createDynamicProductUrl(

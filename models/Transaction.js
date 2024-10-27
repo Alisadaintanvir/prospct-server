@@ -1,39 +1,39 @@
 const mongoose = require("mongoose");
 
-const transactionItemSchema = new mongoose.Schema({
-  itemType: {
-    type: String,
-    enum: ["plan", "credit"],
-    required: true,
-  },
-  plan: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Plan",
-    required: function () {
-      if (this.itemType === "plan") {
-        return true;
-      }
-    },
-  },
-  credit: {
-    quantity: {
-      type: Number,
-      required: function () {
-        if (this.itemType === "credit") {
-          return true;
-        }
+const transactionItemSchema = new mongoose.Schema(
+  {
+    plan: {
+      planId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Plan",
+      },
+      name: {
+        type: String,
+      },
+      price: {
+        type: Number,
+      },
+      billingCycle: {
+        type: String,
+      },
+      quantity: {
+        type: Number,
       },
     },
-    packagePrice: {
-      type: Number,
-      required: function () {
-        if (this.itemType === "credit") {
-          return true;
-        }
+    credit: {
+      name: {
+        type: String,
+      },
+      quantity: {
+        type: Number,
+      },
+      packagePrice: {
+        type: Number,
       },
     },
   },
-});
+  { _id: false }
+); // Prevent creating an _id for each item
 
 const transactionSchema = new mongoose.Schema(
   {
@@ -56,22 +56,7 @@ const transactionSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    items: [
-      {
-        name: String,
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Plan",
-      },
-      {
-        name: String,
-        amount: {
-          type: Number,
-        },
-        quantity: {
-          type: Number,
-        },
-      },
-    ],
+    items: [transactionItemSchema],
 
     paymentGateway: {
       name: String, // e.g., 'stripe', 'paypal'
