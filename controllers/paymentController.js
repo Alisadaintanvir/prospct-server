@@ -127,12 +127,16 @@ const paymentController = {
         "Price[USD][amount]": product.price,
       }));
 
+      console.log(transaction._id);
+
       const dynamicProductUrl = payProGlobalService.createDynamicProductUrl(
         formattedProductsData,
         key,
         iv,
         baseUrl,
-        dynamicProductId
+        dynamicProductId,
+        (customDemon = "12344321123443212344321"),
+        (testMode = true)
       );
       res.json({ url: dynamicProductUrl });
     } catch (error) {
@@ -141,7 +145,25 @@ const paymentController = {
   },
 
   PayProGlobalIPN: async (req, res) => {
+    const { ORDER_ID, ORDER_STATUS } = req.body;
+    const transactionId = "671dfd12e990e99f5ee8a312";
+
+    // console.log(ORDER_ID, ORDER_STATUS);
     console.log(req.body);
+
+    try {
+      if (ORDER_STATUS === "Processed") {
+        // Mark transaction as completed
+        const transaction = await transactionService.updateTransactionStatus(
+          transactionId,
+          "COMPLETED",
+          req.body
+        );
+      }
+    } catch (error) {
+      console.error("PayProGlobal IPN Error:", error);
+      res.status(500).json({ error: "Error processing PayProGlobal IPN" });
+    }
   },
 };
 

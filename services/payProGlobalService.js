@@ -1,13 +1,23 @@
 const crypto = require("crypto");
 
-const createDynamicProductUrl = (productsData, key, iv, baseUrl, productId) => {
+const createDynamicProductUrl = (
+  productsData,
+  key,
+  iv,
+  baseUrl,
+  productId,
+  testMode = false,
+  customDemon
+) => {
   let dynamicProductUrl = `${baseUrl}?currency=USD`;
 
   productsData.forEach((product, index) => {
     const encryptedData = encryptData(product, key, iv);
     dynamicProductUrl += `&products[${index + 1}][id]=${productId}&products[${
       index + 1
-    }][data]=${encryptedData}`;
+    }][data]=${encryptedData}&x-customDemon=${customDemon}${
+      testMode ? "&use-test-mode=true&secret-key=@eHSxjOFtm" : ""
+    }`;
   });
 
   return dynamicProductUrl;
