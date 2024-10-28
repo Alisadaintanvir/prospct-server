@@ -143,11 +143,14 @@ const paymentController = {
   },
 
   PayProGlobalIPN: async (req, res) => {
-    const { ORDER_ID, ORDER_STATUS } = req.body;
-    const transactionId = "671dfd12e990e99f5ee8a312";
+    const { ORDER_ID, ORDER_STATUS, ORDER_CUSTOM_FIELDS } = req.body;
+    const transactionIdMatch = ORDER_CUSTOM_FIELDS.match(
+      /x-transaction-id=(.+)/
+    );
+    const transactionId = transactionIdMatch ? transactionIdMatch[1] : null;
 
     // console.log(ORDER_ID, ORDER_STATUS);
-    console.log(req.body);
+    // console.log(req.body);
 
     try {
       if (ORDER_STATUS === "Processed") {
@@ -157,6 +160,15 @@ const paymentController = {
           "COMPLETED",
           req.body
         );
+
+        // Apply benefits (e.g., plan or credits) to the user’s account
+        await transactionService.applyTransactionBenefits(
+          transaction.userId,
+          transaction
+        );
+        res
+          .status(200)
+          .json({ message: "Payment completed and transaction updated" });
       }
     } catch (error) {
       console.error("PayProGlobal IPN Error:", error);

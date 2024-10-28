@@ -2,6 +2,8 @@ const Transaction = require("../models/Transaction");
 const User = require("../models/User");
 const Subscription = require("../models/Subscription");
 
+const { upgradeUserPlan, upgradeUserCredits } = require("./userService");
+
 const transactionService = {
   //Initialize a transaction
 
@@ -14,6 +16,7 @@ const transactionService = {
           return {
             plan: {
               name: item.name,
+              planId: item.planId,
               price: item.price,
               billingCycle: item.billingCycle || "monthly",
               quantity: item.quantity || 1,
@@ -65,11 +68,13 @@ const transactionService = {
       transaction.type === "PLAN_UPGRADE" ||
       transaction.type === "PLAN & CREDIT PURCHASE"
     ) {
-      // Update the user's plan if a plan is specified
-      if (transaction.planDetails && transaction.planDetails.planId) {
-        user.plan = transaction.planDetails.planId;
-        // Update or create a new subscription if needed
-        // await subscriptionService.updateSubscription(userId, transaction.planDetails);
+      // Extract the plan item if it exists
+      const planItem = transaction.items.find((item) => item.plan);
+      if (planItem) {
+        const { planId } = planItem.plan; // Make sure to extract planId correctly
+        // Call the upgradeUserPlan function to apply the plan upgrade benefits
+        await upgradeUserPlan(userId, planId, transaction._id);
+        console.log("User plan upgraded successfully to plan:", planId);
       }
     }
 
@@ -77,18 +82,13 @@ const transactionService = {
       transaction.type === "CREDIT_PURCHASE" ||
       transaction.type === "PLAN & CREDIT PURCHASE"
     ) {
-      // Update user credits based on the specified credit type
-      if (transaction.credits && transaction.credits.emailCredits) {
-        user.credits.emailCredits.max += transaction.credits.emailCredits;
-      }
-      if (transaction.credits && transaction.credits.phoneCredits) {
-        user.credits.phoneCredits.max += transaction.credits.phoneCredits;
-      }
-      if (transaction.credits && transaction.credits.verificationCredits) {
-        user.credits.verificationCredits.max +=
-          transaction.credits.verificationCredits;
-        // Add more credit types as needed
-      }
+      const creditItem = transaction.items.find((item) => item.credit);
+      await upgradeUserCredits(
+        userId,
+        "verification",
+        creditItem.credit.quantity
+      );
+      console.log("User credits updated successfully.");
     }
 
     await user.save();
