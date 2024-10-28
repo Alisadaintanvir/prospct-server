@@ -7,17 +7,17 @@ const createDynamicProductUrl = (
   baseUrl,
   productId,
   testMode = false,
-  customDemon
+  transactionId
 ) => {
-  let dynamicProductUrl = `${baseUrl}?currency=USD`;
+  let dynamicProductUrl = `${baseUrl}currency=USD&page-template=19022&exfo=742&${
+    testMode ? "use-test-mode=true&secret-key=@eHSxjOFtm" : ""
+  }`;
 
   productsData.forEach((product, index) => {
     const encryptedData = encryptData(product, key, iv);
     dynamicProductUrl += `&products[${index + 1}][id]=${productId}&products[${
       index + 1
-    }][data]=${encryptedData}&x-customDemon=${customDemon}${
-      testMode ? "&use-test-mode=true&secret-key=@eHSxjOFtm" : ""
-    }`;
+    }][data]=${encryptedData}`;
   });
 
   return dynamicProductUrl;

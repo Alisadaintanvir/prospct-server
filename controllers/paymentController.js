@@ -125,9 +125,8 @@ const paymentController = {
       const formattedProductsData = productData.map((product) => ({
         Name: product.name,
         "Price[USD][amount]": product.price,
+        "x-transaction-id": transaction._id,
       }));
-
-      console.log(transaction._id);
 
       const dynamicProductUrl = payProGlobalService.createDynamicProductUrl(
         formattedProductsData,
@@ -135,7 +134,6 @@ const paymentController = {
         iv,
         baseUrl,
         dynamicProductId,
-        (customDemon = "12344321123443212344321"),
         (testMode = true)
       );
       res.json({ url: dynamicProductUrl });
