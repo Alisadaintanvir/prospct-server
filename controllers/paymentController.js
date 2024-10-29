@@ -105,7 +105,7 @@ const paymentController = {
   // PayProGlobal payment gateway
   payProGlobalCheckout: async (req, res) => {
     const { productData, totalAmount, paymentGateway } = req.body;
-    const dynamicProductId = 100072;
+    const dynamicProductId = 100728;
     const key = process.env.PAYPROGLOBAL_ENCRYPTION_KEY;
     const iv = process.env.PAYPROGLOBAL_IV;
     const baseUrl = "https://store.payproglobal.com/checkout?";
@@ -148,9 +148,6 @@ const paymentController = {
       /x-transaction-id=(.+)/
     );
     const transactionId = transactionIdMatch ? transactionIdMatch[1] : null;
-
-    // console.log(ORDER_ID, ORDER_STATUS);
-    // console.log(req.body);
 
     try {
       if (ORDER_STATUS === "Processed") {

@@ -2,6 +2,7 @@
 
 const User = require("../models/User");
 const Plan = require("../models/Plans");
+const { manageUserSubscription } = require("./subscriptionService");
 
 const CREDIT_TYPES = {
   EMAIL: "Email Credits",
@@ -10,7 +11,7 @@ const CREDIT_TYPES = {
   EXPORT: "Export Credits",
 };
 
-async function upgradeUserPlan(userId, planId, subscriptionId = null) {
+async function upgradeUserPlan(userId, planId, billingCycle) {
   try {
     const user = await User.findById(userId);
     const plan = await Plan.findById(planId);
@@ -34,9 +35,14 @@ async function upgradeUserPlan(userId, planId, subscriptionId = null) {
 
     // Set the new plan and subscription
     user.plan = planId;
-    if (subscriptionId) {
-      user.subscription = subscriptionId;
-    }
+    // Handle subscription tracking
+    const subscription = await manageUserSubscription(
+      userId,
+      planId,
+      new Date(),
+      billingCycle
+    );
+    user.subscription = subscription._id; // Link to the new subscription
 
     // Save the updated user document
     await user.save();
@@ -66,7 +72,7 @@ async function upgradeUserCredits(userId, creditType, quantity) {
       throw new Error("Unknown credit type");
     }
 
-    user.credits.verificationCredits.max += quantity;
+    user.credits[CREDIT_TYPES[creditType.toUpperCase()]].max += quantity;
 
     await user.save();
 

@@ -60,7 +60,7 @@ const transactionService = {
     return transaction;
   },
 
-  //Applky transaction benefit
+  //Apply transaction benefit
   applyTransactionBenefits: async (userId, transaction) => {
     const user = await User.findById(userId);
 
@@ -71,9 +71,10 @@ const transactionService = {
       // Extract the plan item if it exists
       const planItem = transaction.items.find((item) => item.plan);
       if (planItem) {
-        const { planId } = planItem.plan; // Make sure to extract planId correctly
+        const { planId } = planItem.plan;
+
         // Call the upgradeUserPlan function to apply the plan upgrade benefits
-        await upgradeUserPlan(userId, planId, transaction._id);
+        await upgradeUserPlan(userId, planId, planItem.plan.billingCycle);
         console.log("User plan upgraded successfully to plan:", planId);
       }
     }

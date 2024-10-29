@@ -22,8 +22,13 @@ const subscriptionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["active", "expired"],
+      enum: ["active", "inactive", "expired"],
       default: "active",
+    },
+    billingCycle: {
+      type: String,
+      enum: ["monthly", "anually", "lifetime"],
+      required: true,
     },
   },
   { timestamps: true }
