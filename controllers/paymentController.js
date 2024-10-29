@@ -6,6 +6,8 @@ const perfectMoneyService = require("../services/perfectMoneyService");
 const transactionService = require("../services/transactionService");
 const cryptomusURI = "https://api.cryptomus.com/v1";
 
+let ipnHitCount = 0;
+
 const paymentController = {
   // Stripe payment gateway functions
   stripeCreateCheckoutSession: async (req, res) => {
@@ -105,7 +107,7 @@ const paymentController = {
   // PayProGlobal payment gateway
   payProGlobalCheckout: async (req, res) => {
     const { productData, totalAmount, paymentGateway } = req.body;
-    const dynamicProductId = 100072;
+    const dynamicProductId = 100728;
     const key = process.env.PAYPROGLOBAL_ENCRYPTION_KEY;
     const iv = process.env.PAYPROGLOBAL_IV;
     const baseUrl = "https://store.payproglobal.com/checkout?";
@@ -148,7 +150,6 @@ const paymentController = {
       /x-transaction-id=(.+)/
     );
     const transactionId = transactionIdMatch ? transactionIdMatch[1] : null;
-
     try {
       if (ORDER_STATUS === "Processed") {
         // Mark transaction as completed
@@ -157,15 +158,11 @@ const paymentController = {
           "COMPLETED",
           req.body
         );
-
         // Apply benefits (e.g., plan or credits) to the user’s account
         await transactionService.applyTransactionBenefits(
           transaction.userId,
           transaction
         );
-        res
-          .status(200)
-          .json({ message: "Payment completed and transaction updated" });
       }
     } catch (error) {
       console.error("PayProGlobal IPN Error:", error);

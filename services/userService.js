@@ -72,6 +72,9 @@ async function upgradeUserCredits(userId, creditType, quantity) {
       throw new Error("Unknown credit type");
     }
 
+    console.log("creditType", creditType, "quantity", quantity);
+
+    user.credits[CREDIT_TYPES[creditType.toUpperCase()]].current += quantity;
     user.credits[CREDIT_TYPES[creditType.toUpperCase()]].max += quantity;
 
     await user.save();

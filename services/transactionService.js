@@ -62,38 +62,55 @@ const transactionService = {
 
   //Apply transaction benefit
   applyTransactionBenefits: async (userId, transaction) => {
-    const user = await User.findById(userId);
+    // Check if transaction has already been processed
+    if (transaction.status !== "COMPLETED") {
+      console.log("Transaction is not completed yet.");
+      return;
+    }
 
-    if (
-      transaction.type === "PLAN_UPGRADE" ||
-      transaction.type === "PLAN & CREDIT PURCHASE"
-    ) {
-      // Extract the plan item if it exists
-      const planItem = transaction.items.find((item) => item.plan);
-      if (planItem) {
-        const { planId } = planItem.plan;
-
-        // Call the upgradeUserPlan function to apply the plan upgrade benefits
-        await upgradeUserPlan(userId, planId, planItem.plan.billingCycle);
-        console.log("User plan upgraded successfully to plan:", planId);
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error("User not found");
       }
-    }
 
-    if (
-      transaction.type === "CREDIT_PURCHASE" ||
-      transaction.type === "PLAN & CREDIT PURCHASE"
-    ) {
-      const creditItem = transaction.items.find((item) => item.credit);
-      await upgradeUserCredits(
-        userId,
-        "verification",
-        creditItem.credit.quantity
-      );
-      console.log("User credits updated successfully.");
-    }
+      // Handle plan upgrades
+      if (
+        transaction.type === "PLAN_UPGRADE" ||
+        transaction.type === "PLAN & CREDIT PURCHASE"
+      ) {
+        const planItem = transaction.items.find((item) => item?.plan);
+        if (planItem) {
+          const { planId, billingCycle } = planItem.plan;
+          await upgradeUserPlan(userId, planId, billingCycle);
+        }
+      }
 
-    await user.save();
-    return user;
+      // Handle credit purchases
+      if (
+        transaction.type === "CREDIT_PURCHASE" ||
+        transaction.type === "PLAN & CREDIT PURCHASE"
+      ) {
+        const creditItems = transaction.items.filter(
+          (item) =>
+            item?.credit?.quantity && typeof item.credit.quantity === "number"
+        );
+
+        for (const item of creditItems) {
+          await upgradeUserCredits(
+            userId,
+            "verification",
+            item.credit.quantity
+          );
+        }
+      }
+
+      const updatedUser = await user.save();
+      return updatedUser;
+    } catch (error) {
+      console.error("Error applying transaction benefits:", error);
+      throw new Error(`Failed to apply transaction benefits: ${error.message}`);
+    }
   },
 
   // Determine the type of transaction based on items
