@@ -43,6 +43,8 @@ const creditsController = {
       res.status(500).json({ error: "Something went wrong" });
     }
   },
+
+  // Reset an user credit to default
 };
 
 module.exports = creditsController;
