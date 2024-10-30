@@ -136,7 +136,7 @@ const paymentController = {
         iv,
         baseUrl,
         dynamicProductId,
-        (testMode = true)
+        (testMode = false)
       );
       res.json({ url: dynamicProductUrl });
     } catch (error) {

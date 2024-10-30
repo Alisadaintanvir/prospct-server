@@ -18,6 +18,20 @@ const savedSearchController = {
       res.status(500).json({ error: "Something went wrong" });
     }
   },
+
+  // get saved search by search id
+  getSavedSearchById: async (req, res) => {
+    try {
+      const { searchId } = req.params;
+
+      const savedSearch = await SavedSearch.findById(searchId);
+      console.log(savedSearch);
+      res.status(200).json({ savedSearch });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ error: "Something went wrong" });
+    }
+  },
 };
 
 module.exports = savedSearchController;
