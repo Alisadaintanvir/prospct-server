@@ -107,7 +107,7 @@ const paymentController = {
   // PayProGlobal payment gateway
   payProGlobalCheckout: async (req, res) => {
     const { productData, totalAmount, paymentGateway } = req.body;
-    const dynamicProductId = 100728;
+    const dynamicProductId = 100072;
     const key = process.env.PAYPROGLOBAL_ENCRYPTION_KEY;
     const iv = process.env.PAYPROGLOBAL_IV;
     const baseUrl = "https://store.payproglobal.com/checkout?";
