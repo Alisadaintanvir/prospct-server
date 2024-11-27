@@ -9,7 +9,7 @@ const createDynamicProductUrl = (
   testMode = false,
   transactionId
 ) => {
-  let dynamicProductUrl = `${baseUrl}currency=USD&page-template=19022&exfo=742&${
+  let dynamicProductUrl = `${baseUrl}currency=USD&page-template=19077&exfo=742&${
     testMode ? "use-test-mode=true&secret-key=@eHSxjOFtm" : ""
   }`;
 
